@@ -2,12 +2,11 @@ import * as THREE from 'three';
 import {GridHelper} from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-export const main = (canvas : any) => {
-  console.log("lol");
+export const main = (canvasId : string, canvasWidth : number, canvasHeight: number) => {
 
+  const canvas = document.getElementById(canvasId)!;
   const renderer = new THREE.WebGLRenderer({canvas});
   renderer.shadowMap.enabled = true;
-  renderer.setSize(window.innerWidth, window.innerHeight);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
@@ -63,4 +62,3 @@ export const main = (canvas : any) => {
   }
   renderer.setAnimationLoop(animate);
 }
-

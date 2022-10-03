@@ -1,22 +1,14 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
-import { main } from "./three/main";
+import React from 'react';
+import logo from './logo.svg';
+import Simulation from './three/Simulation';
 
 function App() {
+  return (
+    <div>
+      <Simulation />
 
-  const canvasId = "threeCanvas";
-
-  const canvasElm = <canvas id={canvasId} />;
-
-  useEffect(()=>{
-    main(canvasElm);
-  },[]);
-
-
-  return canvasElm;
-
-
+    </div>
+  );
 }
 
 export default App;
