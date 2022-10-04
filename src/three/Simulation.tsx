@@ -12,12 +12,8 @@ function Simulation() {
 
   useEffect(()=>{
     main(canvasId, canvasWidth, canvasHeight);
+    console.log("main ran");
   },[]);
-
-
-  
-  console.log("created canvas");
-
 
   return <canvas id={canvasId} width={canvasWidth} height={canvasHeight} />;
 
