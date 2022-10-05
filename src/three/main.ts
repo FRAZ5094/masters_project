@@ -25,6 +25,7 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
   const nCols=nWidthSegments+1;
   const nRows=nHeightSegments+1;
   const l = d/nWidthSegments;
+  const k = 0.0001;
 
   const geometry = new THREE.PlaneGeometry(d,d,nWidthSegments,nHeightSegments)
   const plane = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({wireframe: true}));
@@ -59,7 +60,7 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
       for (let xOffset=-xDepth;xOffset<=xDepth;xOffset++){
         for (let yOffset=-yDepth;yOffset<=yDepth;yOffset++){
           let springPosition = new THREE.Vector3(vertices.getX(i-nRows+xOffset));
-          forces.push(calculateSpringForce(currentPosition,springPosition,l))
+          forces.push(calculateSpringForce(currentPosition,springPosition,k,l))
         }
       }
 
