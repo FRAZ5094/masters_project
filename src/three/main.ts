@@ -14,21 +14,38 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
   document.body.appendChild(stats.dom)
 
   const canvas = document.getElementById(canvasId)!;
-  const renderer = new THREE.WebGLRenderer({canvas});
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
 
   const controls = new OrbitControls(camera,renderer.domElement);
 
-  const gridHelper = new GridHelper(30);
-  scene.add(gridHelper);
+  //const gridHelper = new GridHelper(30);
+  //scene.add(gridHelper);
 
   camera.position.set(1,0.5,2).setLength(10);
   controls.update();
 
+  const ambientLight = new THREE.AmbientLight(0xFFFFFF,1);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 2);
+  scene.add(directionalLight);
+  directionalLight.shadowBias=-0.005;
+  directionalLight.castShadow = true;
+
+
+
+  const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight,5);
+  scene.add(directionalLightHelper);
+  directionalLight.position.set(20,50,50).setLength(20);
+
   const d = 10;
-  const nWidthSegments = 10;
+  const nWidthSegments = 64;
   const nHeightSegments = nWidthSegments;
   const nCols=nWidthSegments+1;
   const nRows=nHeightSegments+1;
@@ -38,9 +55,18 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
   const xDepth = 1;
   const yDepth = 1;
 
+  const wireframe = false;
   const geometry = new THREE.PlaneGeometry(d,d,nWidthSegments,nHeightSegments)
-  const plane = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({wireframe: true}));
+  
+  let plane;
+  if (wireframe) {
+    plane = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({wireframe: true}));
+  } else {
+    plane = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({side: THREE.DoubleSide, color: 0xDAA520}));
+  }
   scene.add(plane)
+  plane.castShadow = true;
+  plane.receiveShadow = true;
 
 
   const vertices = geometry.attributes.position;
@@ -65,9 +91,6 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
     }
   }
 
-  //give a vertex some initial velocity
-  v[0].z+=0.2;
-
 
   const animate = async (time : number) => {
 
@@ -90,7 +113,7 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
         v[i] = v[i].add(a[i]);
 
         //gravity term
-        //v[i] = v[i].add(new THREE.Vector3(0,-0.01,0));
+        //v[i] = v[i].add(new THREE.Vector3(0,-0.0001,0));
 
         //set the acceleration to 0 for the next frame
         a[i].multiplyScalar(0);
@@ -106,6 +129,7 @@ export const main = (canvasId : string, canvasWidth : number, canvasHeight: numb
 
     geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
+    v[nRows - 1].z+=0.01;
 
     renderer.render(scene, camera);
     stats.end();
