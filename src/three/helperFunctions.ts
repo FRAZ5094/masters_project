@@ -66,7 +66,7 @@ export const findXYOffsetMaxAndMins = (i : number, xDepth : number, yDepth : num
   return { xOffsetMin, xOffsetMax, yOffsetMin, yOffsetMax };
 }
 
-export const findIndicesOfSpringAttachmentPoints = (i : number, nRows : number, nCols : number, xDepth : number, yDepth : number) : Number[] => {
+export const findIndicesOfSpringAttachmentPoints = (i : number, nRows : number, nCols : number, xDepth : number, yDepth : number) : number[] => {
   //this function finds all the indices of the points that the current vertex should be attached to with springs, using the index of the current vertex in the geometry, the total number of rows and columns in the geometry and the x and y Depth that the springs should be
   
   //the xDepth and yDepth refers to how levels of vertices around the current vertex (with index i) that will be attached to it with springs, as long as they are not off the side of the geometry
@@ -76,13 +76,13 @@ export const findIndicesOfSpringAttachmentPoints = (i : number, nRows : number, 
 
   const { xOffsetMin, xOffsetMax, yOffsetMin, yOffsetMax } = findXYOffsetMaxAndMins(i,xDepth,yDepth,nRows,nCols);
 
-  const indices : Number[] = [];
+  const indices : number[] = [];
   
   for (let yOffset=yOffsetMin;yOffset<=yOffsetMax;yOffset++){
     for (let xOffset=xOffsetMin;xOffset<=xOffsetMax;xOffset++){
 
       //skip if the current point aka no offset in x or y
-      if (xOffset == 0 && yOffset == 0) continue;
+      if (xOffset === 0 && yOffset === 0) continue;
 
       let index = i + (nCols * yOffset) + xOffset;
 
@@ -92,4 +92,8 @@ export const findIndicesOfSpringAttachmentPoints = (i : number, nRows : number, 
 
   return indices;
 
+}
+
+export const getPositionVectorOfVertexAtIndex = (index : number, vertices : THREE.BufferAttribute | THREE.InterleavedBufferAttribute) : THREE.Vector3 => {
+  return new THREE.Vector3(vertices.getX(index),vertices.getY(index),vertices.getZ(index));
 }
