@@ -42,7 +42,7 @@ const nWidthSegments = 64;
 const nHeightSegments = nWidthSegments;
 const nCols=nWidthSegments+1;
 const nRows=nHeightSegments+1;
-const k = 0.1;
+const k = 0.4;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -96,8 +96,9 @@ const animate = async (time : number) => {
   //add acceleration to velocity and calculate new positions
   for (let i=0;i<geometry.attributes.position.count; i++){
 
+
     //lock top left and right corners
-    //if (i!==0 && i !== nCols - 1){
+    if (i!==0 && i !== nCols - 1){
       const x = vertices.getX(i);
       const y = vertices.getY(i);
       const z = vertices.getZ(i);
@@ -105,18 +106,18 @@ const animate = async (time : number) => {
       v[i] = v[i].add(a[i]);
 
       //gravity term
-      //v[i] = v[i].add(new THREE.Vector3(0,-0.0001,0));
+      v[i] = v[i].add(new THREE.Vector3(0,-0.0001,0));
 
       //set the acceleration to 0 for the next frame
       a[i].multiplyScalar(0);
 
       //"damping" term
-      //v[i] = v[i].multiplyScalar(0.98);
+      v[i] = v[i].multiplyScalar(0.98);
 
 
       //euler integration
       vertices.setXYZ(i,x+v[i].x,y+v[i].y,z+v[i].z);
-    //}
+    }
   }
 
   geometry.attributes.position.needsUpdate = true;
