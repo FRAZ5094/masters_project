@@ -9,11 +9,23 @@
       body {
         margin : 0;
       }
+      #three_canvas {
+        /* border-style: solid;
+        border-radius: 1px;
+        border-color: blue; */
+      }
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <!--<script type="module" src="/src/shaderMain.ts"></script>-->
-    <script type="module" src="/src/asTest.ts"></script>
+    <canvas id="three_canvas"></canvas>
+    <button>Play</button>
+    <select>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="5">5</option>
+      <option value="10">10</option>
+    </select>
+    <input id="timestepSlider" type="range">
+    <script defer type="module" src="/src/cpuMain.ts"></script>
   </body>
 </html>
