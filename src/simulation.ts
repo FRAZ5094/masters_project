@@ -1,68 +1,68 @@
 import * as THREE from "three";
+import { Spring } from "./Spring";
 
-export const runSim = (vertices : THREE.BufferAttribute | THREE.InterleavedBufferAttribute, nTimestep : number) : THREE.Vector3[][] => {
+export const runSim = (vertices : THREE.BufferAttribute | THREE.InterleavedBufferAttribute, nTimestep : number , dt : number) : { a : THREE.Vector3[][], v : THREE.Vector3[][], p : THREE.Vector3[][] } => {
+    console.log("starting simulation");
 
     const nVertices = vertices.count;
 
+    const a : THREE.Vector3[][] = [];
+    const v : THREE.Vector3[][] = [];
     const p : THREE.Vector3[][] = [];
 
     //initialize the arrays for storing the accelerations, velocities and positions for each time step
-    for (let i = 0; i<nTimestep; i++){
+    console.log("Initializing memory")
+
+    console.time();
+    for (let t = 0; t<nTimestep; t++){
+        const tempA : THREE.Vector3[] = [];
+        const tempV : THREE.Vector3[] = [];
         const tempP : THREE.Vector3[] = [];
         for (let j = 0; j<nVertices; j++) {
-            tempP.push(new THREE.Vector3(vertices.getX(j)+i*0.1, vertices.getY(j),vertices.getZ(j)));
+
+            //start off with zero values in acceleration and velocity for all time steps
+            tempA.push(new THREE.Vector3());
+            tempV.push(new THREE.Vector3());
+
+
+            if (t == 0){
+                //if its the first timestep store the values from the staring position of the plane geometry in the positions for the first timestep
+                tempP.push(new THREE.Vector3(vertices.getX(j), vertices.getY(j),vertices.getZ(j)));
+            } else {
+                tempP.push(new THREE.Vector3());
+            }
         }
+        a.push(tempA);
+        v.push(tempV);
         p.push(tempP);
     }
 
+    console.timeEnd();
+    console.log("Done initializing memory");
 
-    return p;
 
-    // const a : THREE.Vector3[] = [];
-    // const v : THREE.Vector3[] = [];
-    // const springs : Spring[] = [];
+    //main simulation loop
 
-    // for (let i=0;i<geometry.attributes.position.count; i++){
-    // //create arrays for velocity and acceleration of the geometry
-    // a.push(new THREE.Vector3(0,0,0));
-    // v.push(new THREE.Vector3(0,0,0));
+    //loop over time steps
+    console.log("Starting simulation loop");
+    console.time();
+    for (let t = 1; t<nTimestep; t++){
 
-    // //for each vertex the indices of the points that it needs to be attached to with springs are found
-    // const attachementPointIndices = findIndicesOfSpringAttachmentPoints(i,nRows,nCols,xDepth,yDepth);
+        for (let i = 0; i<nVertices; i++){
+            let a = new THREE.Vector3(0,-0.01,0);
 
-    // //this indices are then looped over and then the springs are attached to it
-    // for (let attachementPointIndex of attachementPointIndices) {
-    //     let l : number = getPositionVectorOfVertexAtIndex(i,vertices).sub(getPositionVectorOfVertexAtIndex(attachementPointIndex,vertices)).length();
-    //     springs.push(new Spring(i,attachementPointIndex,k,l));
-    // }
-    // }
+            v[t][i] = v[t-1][i].clone();
+            p[t][i] = p[t-1][i].clone();
 
-//   //apply forces from springs
-//   for (let i=0;i<springs.length; i++) {
-//     springs[i].applyForce(a,vertices);
-//   }
+            v[t][i].add(a);
 
-//   //add acceleration to velocity and calculate new positions
-//   for (let i=0;i<geometry.attributes.position.count; i++){
+            //remember to multiply by dt here for euler integration
+            p[t][i].add(v[t][i]);
+        }
 
-//     const x = vertices.getX(i);
-//     const y = vertices.getY(i);
-//     const z = vertices.getZ(i);
+    }
+    console.log("Finished simulation loop")
+    console.timeEnd();
 
-//     v[i] = v[i].add(a[i]);
-
-//     //gravity term
-//     // v[i] = v[i].add(new THREE.Vector3(0,-0.0001,0));
-
-//     //set the acceleration to 0 for the next frame
-//     a[i].multiplyScalar(0);
-
-//     //"damping" term
-//     // v[i] = v[i].multiplyScalar(0.98);
-
-//     v[0].z+=0.000001;
-
-//     //euler integration
-//     vertices.setXYZ(i,x+v[i].x,y+v[i].y,z+v[i].z);
-//   }
+    return {a,v,p};
 };

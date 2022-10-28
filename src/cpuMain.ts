@@ -17,7 +17,17 @@ let t=0;
 let speed = 1;
 let playing = false;
 
-let p : THREE.Vector3[][];
+const d = 10;
+const nWidthSegments = 64;
+const nHeightSegments = nWidthSegments;
+const nCols=nWidthSegments+1;
+const nRows=nHeightSegments+1;
+const k = 0.4;
+const dt = 0.1;
+
+//applying springs in 3x3 around point
+const xDepth = 1;
+const yDepth = 1;
 
 const timestepSliderElement = document.getElementById("timestepSlider") as HTMLInputElement;
 
@@ -31,9 +41,35 @@ timestepSliderElement.oninput = (e) => {
 
   if (value < p.length) {
     t = value;
+    playing = false;
+    playButton.innerText = ">";
   }
 }
 
+
+const playButton = document.getElementById("playButton") as HTMLButtonElement;
+
+playButton.onclick = () => {
+
+  playing = !playing;
+
+  if(playing){
+    playButton.innerText = "||"
+  } else {
+    playButton.innerText = ">";
+  }
+
+
+}
+
+var intervalId = window.setInterval(function(){
+  if (playing){
+    if (t+speed < p.length){
+      t+=speed;
+      timestepSliderElement.value = t.toString();
+    }
+  }
+}, dt*1000);
 
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
@@ -58,28 +94,39 @@ camera.position.set(1,0.5,2).setLength(10);
 controls.update();
 
 
-const d = 10;
-const nWidthSegments = 64;
-const nHeightSegments = nWidthSegments;
-const nCols=nWidthSegments+1;
-const nRows=nHeightSegments+1;
-const k = 0.4;
-const dt = 0.1;
-
-//applying springs in 3x3 around point
-const xDepth = 1;
-const yDepth = 1;
 
 const geometry = new THREE.PlaneGeometry(d,d,nWidthSegments,nHeightSegments);
 
 const vertices = geometry.attributes.position;
 
-const nTimesteps = 50;
 
-timestepSliderElement.max =(nTimesteps-1).toString();
 
-p = runSim(vertices, nTimesteps);
 
+const springs : Spring[] = [];
+
+for (let i=0;i<geometry.attributes.position.count; i++){
+
+  //for each vertex the indices of the points that it needs to be attached to with springs are found
+  const attachmentPointIndices = findIndicesOfSpringAttachmentPoints(i,nRows,nCols,xDepth,yDepth);
+
+  //this indices are then looped over and then the springs are attached to it
+  for (let attachmentPointIndex of attachmentPointIndices) {
+      let l : number = getPositionVectorOfVertexAtIndex(i,vertices).sub(getPositionVectorOfVertexAtIndex(attachmentPointIndex,vertices)).length();
+      springs.push(new Spring(i,attachmentPointIndex,k,l));
+  }
+}
+
+const nTimestep = 1000;
+
+timestepSliderElement.max =(nTimestep-1).toString();
+
+var startTime = performance.now()
+
+const {a,v,p} = runSim(vertices, nTimestep, dt);
+    
+var endTime = performance.now()
+
+console.log(`Set up and simulation took ${endTime - startTime} milliseconds`)
 
 const plane = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
   vertexShader,
