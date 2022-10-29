@@ -64,8 +64,9 @@ playButton.onclick = () => {
 
 var intervalId = window.setInterval(function(){
   if (playing){
-    if (t+speed < p.length){
+    if (t+speed < nTimestep){
       t+=speed;
+      console.log(speed);
       timestepSliderElement.value = t.toString();
     }
   }
@@ -116,14 +117,14 @@ for (let i=0;i<geometry.attributes.position.count; i++){
   }
 }
 
-const nTimestep = 1000;
+const nTimestep = 2;
 
 timestepSliderElement.max =(nTimestep-1).toString();
 
 var startTime = performance.now()
 
-const {a,v,p} = runSim(vertices, nTimestep, dt);
-    
+const {a,v,p}  = runSim(vertices, nTimestep, dt);
+
 var endTime = performance.now()
 
 console.log(`Set up and simulation took ${endTime - startTime} milliseconds`)
@@ -138,17 +139,19 @@ const plane = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
 scene.add(plane);
 
 
-let x,y,z,vertex;
+let x,y,z;
 
 const animate = async (time : number) => {
 
 
 
-  for (let i = 0; i < p[t].length; i++){
-    vertex = p[t][i];
-    x = vertex.x;
-    y = vertex.y;
-    z = vertex.z;
+  for (let i = 0; i < vertices.count; i++){
+
+    let stride = i*3 + (t * vertices.count*3);
+
+    x = p[stride];
+    y = p[stride+1];
+    z = p[stride+2];
 
     geometry.attributes.position.setXYZ(i,x,y,z);
   }
