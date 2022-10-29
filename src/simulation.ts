@@ -31,26 +31,48 @@ export const runSim = (vertices : THREE.BufferAttribute | THREE.InterleavedBuffe
 
     // //main simulation loop
 
-    // //loop over time steps
-    // console.log("Starting simulation loop");
-    // console.time();
-    // for (let t = 1; t<nTimestep; t++){
+    //loop over time steps
+    console.log("Starting simulation loop");
+    console.time();
+    for (let t = 1; t<nTimestep; t++){
 
-    //     for (let i = 0; i<nVertices; i++){
-    //         let a = new THREE.Vector3(0,-0.01,0);
+        for (let i = 0; i<nVertices; i++){
+            let stride = i*3 + (t * nVertices*3);
+            let previousStride = stride - nVertices*3;
 
-    //         v[t][i] = v[t-1][i].clone();
-    //         p[t][i] = p[t-1][i].clone();
+            let x_previous = p[previousStride + 0];
+            let y_previous = p[previousStride + 1];
+            let z_previous = p[previousStride + 2];
 
-    //         v[t][i].add(a);
+            let vx_previous = v[previousStride + 0];
+            let vy_previous = v[previousStride + 1];
+            let vz_previous = v[previousStride + 2];
 
-    //         //remember to multiply by dt here for euler integration
-    //         p[t][i].add(v[t][i]);
-    //     }
+            let ax = 0;
+            let ay = -0.01;
+            let az = 0;
 
-    // }
-    // console.log("Finished simulation loop")
-    // console.timeEnd();
+            let vx = vx_previous + ax;
+            let vy = vy_previous + ay;
+            let vz = vz_previous + az;
+
+            let x = x_previous + vx;
+            let y = y_previous + vy;
+            let z = z_previous + vz;
+
+            v[stride + 0] = vx;
+            v[stride + 1] = vy;
+            v[stride + 2] = vz;
+
+            p[stride + 0] = x;
+            p[stride + 1] = y;
+            p[stride + 2] = z;
+
+        }
+
+    }
+    console.log("Finished simulation loop")
+    console.timeEnd();
 
 
     // console.log({nVertices});

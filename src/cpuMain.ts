@@ -66,7 +66,7 @@ var intervalId = window.setInterval(function(){
   if (playing){
     if (t+speed < nTimestep){
       t+=speed;
-      console.log(speed);
+      console.log(t);
       timestepSliderElement.value = t.toString();
     }
   }
@@ -117,7 +117,7 @@ for (let i=0;i<geometry.attributes.position.count; i++){
   }
 }
 
-const nTimestep = 2;
+const nTimestep = 200;
 
 timestepSliderElement.max =(nTimestep-1).toString();
 
