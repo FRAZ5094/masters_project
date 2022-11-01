@@ -66,7 +66,7 @@ var intervalId = window.setInterval(function(){
   if (playing){
     if (t+speed < nTimestep){
       t+=speed;
-      console.log(t);
+      // console.log(t);
       timestepSliderElement.value = t.toString();
     }
   }
@@ -125,6 +125,7 @@ var startTime = performance.now()
 
 const {a,v,p}  = runSim(vertices, nTimestep, dt);
 
+
 var endTime = performance.now()
 
 console.log(`Set up and simulation took ${endTime - startTime} milliseconds`)
@@ -135,26 +136,36 @@ const plane = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
   wireframe: true,
 }));
 
-
 scene.add(plane);
 
 
-let x,y,z;
+
+// console.log(pBuffer.array)
+
+
 
 const animate = async (time : number) => {
 
+  //you were about to have the buffer atribute set the positions of the vertices
 
 
-  for (let i = 0; i < vertices.count; i++){
+  // for (let i = 0; i < vertices.count; i++){
 
-    let stride = i*3 + (t * vertices.count*3);
+  const p_t = p.slice(t*vertices.count*3,(t+1)*vertices.count*3);
 
-    x = p[stride];
-    y = p[stride+1];
-    z = p[stride+2];
+  const pBuffer = new THREE.BufferAttribute(p_t,3);
 
-    geometry.attributes.position.setXYZ(i,x,y,z);
-  }
+  geometry.setAttribute("position", pBuffer);
+
+  //   let stride = i*3 + (t * vertices.count*3);
+
+
+  //   x = p[stride];
+  //   y = p[stride+1];
+  //   z = p[stride+2];
+
+  //   geometry.attributes.position.setXYZ(i,x,y,z);
+  // }
 
   geometry.attributes.position.needsUpdate = true;
   geometry.computeVertexNormals();

@@ -49,16 +49,16 @@ export const runSim = (vertices : THREE.BufferAttribute | THREE.InterleavedBuffe
             let vz_previous = v[previousStride + 2];
 
             let ax = 0;
-            let ay = -0.01;
+            let ay = -0.1;
             let az = 0;
 
-            let vx = vx_previous + ax;
-            let vy = vy_previous + ay;
-            let vz = vz_previous + az;
+            let vx = vx_previous + ax * dt;
+            let vy = vy_previous + ay * dt;
+            let vz = vz_previous + az * dt;
 
-            let x = x_previous + vx;
-            let y = y_previous + vy;
-            let z = z_previous + vz;
+            let x = x_previous + vx * dt;
+            let y = y_previous + vy * dt;
+            let z = z_previous + vz * dt;
 
             v[stride + 0] = vx;
             v[stride + 1] = vy;
