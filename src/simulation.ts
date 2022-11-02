@@ -47,13 +47,9 @@ export const runSim = (
   console.log("Starting simulation loop");
   console.time();
 
-  const a = new THREE.Vector3();
-  const currentVertexPos = new THREE.Vector3();
-  const otherVertexPos = new THREE.Vector3();
-
   for (let t = 1; t < nTimestep; t++) {
     for (let i = 0; i < nVertices; i++) {
-      let stride = i * 3 + t * nVertices * 3;
+      let stride = i * 3 + t * (nVertices * 3);
       let previousStride = stride - nVertices * 3;
 
       let vStride = i * 3; // different for v because its only stored for 1 timestep at a time
@@ -66,56 +62,43 @@ export const runSim = (
       let vy_previous = v[vStride + 1];
       let vz_previous = v[vStride + 2];
 
-      currentVertexPos.x = x_previous;
-      currentVertexPos.y = y_previous;
-      currentVertexPos.z = z_previous;
-
-      a.multiplyScalar(0);
+      let ax = 0;
+      let ay = 0;
+      let az = 0;
 
       for (let j = 0; j < springArrays[i].length; j++) {
         let otherIndex = springArrays[i][j][0];
         let springL = springArrays[i][j][1];
 
-        console.table({ otherIndex, springL });
-
         let otherStride = otherIndex * 3 + (t - 1) * nVertices * 3;
 
-        // console.log(otherStride);
+        let x_other = p[otherStride + 0];
+        let y_other = p[otherStride + 1];
+        let z_other = p[otherStride + 2];
 
-        let otherX = p[otherStride + 0];
-        let otherY = p[otherStride + 1];
-        let otherZ = p[otherStride + 2];
-
-        otherVertexPos.x = otherX;
-        otherVertexPos.y = otherY;
-        otherVertexPos.z = otherZ;
-
-        console.log(otherVertexPos.clone().sub(currentVertexPos).length());
-
-        let f = calculateSpringForce(
-          currentVertexPos,
-          otherVertexPos,
+        let [aSpringX, aSpringY, aSpringZ] = calculateSpringForce(
+          x_previous,
+          y_previous,
+          z_previous,
+          x_other,
+          y_other,
+          z_other,
           k,
           springL
         );
 
-        // console.log(f);
-
-        a.add(f);
-
-        // a.add(
-        //   calculateSpringForce(
-        //     currentVertexPos,
-        //     new THREE.Vector3(otherX, otherY, otherZ),
-        //     k,
-        //     springL
-        //   )
-        // );
+        ax += aSpringX;
+        ay += aSpringY;
+        az += aSpringZ;
       }
 
-      let vx = vx_previous + a.x * dt;
-      let vy = vy_previous + a.y * dt;
-      let vz = vz_previous + a.z * dt;
+      let vx = vx_previous + ax * dt;
+      let vy = vy_previous + ay * dt;
+      let vz = vz_previous + az * dt;
+
+      if (i == 0) {
+        vz += 0.01;
+      }
 
       let x = x_previous + vx * dt;
       let y = y_previous + vy * dt;

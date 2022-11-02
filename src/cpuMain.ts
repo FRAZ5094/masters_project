@@ -15,11 +15,11 @@ let speed = 1;
 let playing = true;
 
 const d = 1;
-const nWidthSegments = 1;
+const nWidthSegments = 64;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 0.1;
+const k = 10;
 const dt = 0.1;
 const animationFPS = 24;
 
@@ -100,7 +100,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 //const gridHelper = new GridHelper(30);
 //scene.add(gridHelper);
 
-camera.position.set(1, 0.5, 2).setLength(2);
+camera.position.set(1, 0.5, 2).setLength(1);
 controls.update();
 
 const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);
@@ -117,7 +117,7 @@ const springArrays = getSpringIndicesArray(
   yDepth
 );
 
-const nTimestep = 2;
+const nTimestep = 2000;
 
 timestepSliderElement.max = (nTimestep - 1).toString();
 
