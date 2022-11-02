@@ -7,7 +7,7 @@
     <title>Masters Project</title>
     <style>
       body {
-        margin : 0;
+        margin: 0;
       }
       #three_canvas {
         /* border-style: solid;
@@ -16,8 +16,12 @@
       }
     </style>
     <script>
-
-javascript:(function(){var script=document.createElement('script');script.src='https://rawgit.com/paulirish/memory-stats.js/master/bookmarklet.js';document.head.appendChild(script);})()
+      javascript: (function () {
+        var script = document.createElement("script");
+        script.src =
+          "https://rawgit.com/paulirish/memory-stats.js/master/bookmarklet.js";
+        document.head.appendChild(script);
+      })();
     </script>
   </head>
   <body>
@@ -29,10 +33,8 @@ javascript:(function(){var script=document.createElement('script');script.src='h
       <option value="5">5</option>
       <option value="10">10</option>
     </select>
-    <input id="timestepSlider" type="range">
+    <input id="timestepSlider" type="range" />
     <button>Start simulation</button>
-
-
 
     <script defer type="module" src="/src/cpuMain.ts"></script>
   </body>

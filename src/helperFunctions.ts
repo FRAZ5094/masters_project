@@ -97,3 +97,38 @@ export const findIndicesOfSpringAttachmentPoints = (i : number, nRows : number, 
 export const getPositionVectorOfVertexAtIndex = (index : number, vertices : THREE.BufferAttribute | THREE.InterleavedBufferAttribute) : THREE.Vector3 => {
   return new THREE.Vector3(vertices.getX(index),vertices.getY(index),vertices.getZ(index));
 }
+
+export const getSpringIndicesArray = (vertices : THREE.BufferAttribute | THREE.InterleavedBufferAttribute, nRows : number, nCols : number, xDepth : number, yDepth : number) : number[][][] => {
+
+  // returns a 3d array used to represent the connections of the springs
+
+  // the first dimension is for the vertex that all the springs are being attached to in the geometry
+
+  // the second dimension is for each of the springs attached to that one point
+
+  // the third dimension is an array of length 2 that holds the index of the vertex that the spring is attached to from the current vertex in index 0
+  // and the natural length of that spring in index 1
+
+  const springArrays : number[][][] = [];
+
+  for (let i = 0; i< vertices.count; i++ ){
+
+    const springArray : number[][] = [];
+
+    const attachmentPointIndices = findIndicesOfSpringAttachmentPoints(i,nRows,nCols,xDepth,yDepth);
+
+    for (let attachmentPointIndex of attachmentPointIndices){
+
+      // get natural length
+      let l : number = getPositionVectorOfVertexAtIndex(i,vertices).sub(getPositionVectorOfVertexAtIndex(attachmentPointIndex,vertices)).length();
+      springArray.push([attachmentPointIndex,l]);
+
+    }
+
+    springArrays.push(springArray);
+
+  }
+
+
+  return springArrays;
+}
