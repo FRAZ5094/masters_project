@@ -12,14 +12,14 @@ console.log("ran cpuMain.ts");
 
 let t = 0;
 let speed = 1;
-let playing = false;
+let playing = true;
 
-const d = 10;
-const nWidthSegments = 64;
+const d = 1;
+const nWidthSegments = 1;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 0.4;
+const k = 0.1;
 const dt = 0.1;
 const animationFPS = 24;
 
@@ -100,30 +100,30 @@ const controls = new OrbitControls(camera, renderer.domElement);
 //const gridHelper = new GridHelper(30);
 //scene.add(gridHelper);
 
-camera.position.set(1, 0.5, 2).setLength(10);
+camera.position.set(1, 0.5, 2).setLength(2);
 controls.update();
 
 const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);
 
 const vertices = geometry.attributes.position;
 
+const verticesPosArray = vertices.array as Float32Array;
+
 const springArrays = getSpringIndicesArray(
-  vertices,
+  verticesPosArray,
   nRows,
   nCols,
   xDepth,
   yDepth
 );
 
-// console.log(springArrays);
-
-const nTimestep = 1000;
+const nTimestep = 2;
 
 timestepSliderElement.max = (nTimestep - 1).toString();
 
 var startTime = performance.now();
 
-const p = runSim(vertices, nTimestep, dt);
+const p = runSim(verticesPosArray, springArrays, nTimestep, dt, k);
 
 var endTime = performance.now();
 

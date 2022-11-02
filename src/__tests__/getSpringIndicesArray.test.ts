@@ -9,9 +9,9 @@ describe("getSpringIndicesArray", () => {
 
   const geometry = new THREE.PlaneGeometry(1, 1, nCols - 1, nRows - 1);
 
-  const vertices = geometry.attributes.position;
+  const vertices = geometry.attributes.position.array as Float32Array;
 
-  const nVertices = vertices.count;
+  const nVertices = vertices.length / 3;
 
   const sqrt2 = Math.sqrt(2);
 
