@@ -15,13 +15,13 @@ let speed = 1;
 let playing = true;
 
 const d = 1;
-const nWidthSegments = 64;
+const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 10;
-const dt = 0.1;
-const animationFPS = 24;
+const k = 30;
+const dt = 0.01;
+const playbackFPS = 24;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -59,12 +59,19 @@ playButton.onclick = () => {
   }
 };
 
+const playbackSpeedDropdown = document.getElementById(
+  "playbackSpeedDropdown"
+) as HTMLSelectElement;
+
+playbackSpeedDropdown.value = speed.toString();
+
 const updateModel = (): void => {
   const p_t = p.slice(t * vertices.count * 3, (t + 1) * vertices.count * 3);
 
   const pBuffer = new THREE.BufferAttribute(p_t, 3);
 
   geometry.setAttribute("position", pBuffer);
+  geometry.computeVertexNormals();
 };
 
 var intervalId = window.setInterval(function () {
@@ -117,7 +124,9 @@ const springArrays = getSpringIndicesArray(
   yDepth
 );
 
-const nTimestep = 2000;
+verticesPosArray[0] += -0.08;
+
+const nTimestep = 10000;
 
 timestepSliderElement.max = (nTimestep - 1).toString();
 
@@ -131,9 +140,7 @@ console.log(`Set up and simulation took ${endTime - startTime} milliseconds`);
 
 const plane = new THREE.Mesh(
   geometry,
-  new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
+  new THREE.MeshNormalMaterial({
     wireframe: true,
   })
 );
@@ -155,7 +162,6 @@ const animate = async (time: number) => {
   // }
 
   // geometry.attributes.position.needsUpdate = true;
-  // geometry.computeVertexNormals();
 
   renderer.render(scene, camera);
 };

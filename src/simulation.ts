@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { calculateSpringForce } from "./helperFunctions";
+import { calculateDampingForce, calculateSpringForce } from "./helperFunctions";
 
 export const runSim = (
   verticesPosArray: Float32Array,
@@ -92,13 +92,20 @@ export const runSim = (
         az += aSpringZ;
       }
 
+      let [aDamperX, aDamperY, aDamperZ] = calculateDampingForce(
+        vx_previous,
+        vy_previous,
+        vz_previous,
+        1
+      );
+
+      ax += aDamperX;
+      ay += aDamperY;
+      az += aDamperZ;
+
       let vx = vx_previous + ax * dt;
       let vy = vy_previous + ay * dt;
       let vz = vz_previous + az * dt;
-
-      if (i == 0) {
-        vz += 0.01;
-      }
 
       let x = x_previous + vx * dt;
       let y = y_previous + vy * dt;

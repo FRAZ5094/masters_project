@@ -185,3 +185,16 @@ export const getSpringIndicesArray = (
 
   return springArrays;
 };
+
+export const calculateDampingForce = (
+  vx: number,
+  vy: number,
+  vz: number,
+  c: number
+): number[] => {
+  const fx = -c * vx;
+  const fy = -c * vy;
+  const fz = -c * vz;
+
+  return [fx, fy, fz];
+};
