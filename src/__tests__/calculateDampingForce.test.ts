@@ -33,13 +33,15 @@ describe("calculateDampingForce", () => {
     expect(a.length()).toBe(0);
   });
   it("should calculate the correct magnitude of force", () => {
-    const v = new THREE.Vector3(Math.random(), Math.random(), Math.random());
-    const c = Math.random();
+    const vx = 1.24;
+    const vy = 1.46;
+    const vz = 1.3;
+    const c = 2.3;
 
-    let [ax, ay, az] = calculateDampingForce(v.x, v.y, v.z, c);
+    let [fx, fy, fz] = calculateDampingForce(vx, vy, vz, c);
 
-    const a = new THREE.Vector3(ax, ay, az);
+    const mag = Math.sqrt(fx * fx + fy * fy + fz * fz);
 
-    expect(a.divideScalar(v.length()).length()).toBe(c);
+    expect(mag).toEqual(5.324487580979037);
   });
 });

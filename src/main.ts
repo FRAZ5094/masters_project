@@ -15,11 +15,13 @@ let speed = 1;
 let playing = true;
 
 const d = 1;
+const AM_ratio = 0.1;
 const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 30;
+const k = 100;
+const dampingRatio = 0.1;
 const dt = 0.01;
 const playbackFPS = 24;
 
@@ -124,15 +126,24 @@ const springArrays = getSpringIndicesArray(
   yDepth
 );
 
-verticesPosArray[0] += -0.08;
-
-const nTimestep = 10000;
+const nTimestep: number = 2000;
+// const nTimestep: number = 200000;
 
 timestepSliderElement.max = (nTimestep - 1).toString();
 
 var startTime = performance.now();
 
-const p = runSim(verticesPosArray, springArrays, nTimestep, dt, k);
+const mass = (d * d) / AM_ratio;
+
+const p = runSim(
+  verticesPosArray,
+  mass,
+  dampingRatio,
+  springArrays,
+  nTimestep,
+  dt,
+  k
+);
 
 var endTime = performance.now();
 
@@ -146,6 +157,10 @@ const plane = new THREE.Mesh(
 );
 
 scene.add(plane);
+
+const axesHelper = new THREE.AxesHelper();
+
+scene.add(axesHelper);
 
 const animate = async (time: number) => {
   //you were about to have the buffer atribute set the positions of the vertices

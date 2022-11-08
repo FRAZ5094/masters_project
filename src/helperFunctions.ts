@@ -16,14 +16,12 @@ export const calculateSpringForce = (
   //position2 is the vertex we imagine the spring is attached to
 
   //get distance between the two positions
-  // let dist = position1.sub(position2);
 
   let dx = x1 - x2;
   let dy = y1 - y2;
   let dz = z1 - z2;
 
   //calculate the extension of the spring from the natural length
-  // const extension: number = dist.length() - natural_length;
 
   const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
@@ -36,13 +34,27 @@ export const calculateSpringForce = (
 
   //take advantage of the distance vector being in the same direction as the spring force
   //f = -kx;
-  // const f = dist.multiplyScalar(-k);
 
   dx *= -k * extension;
   dy *= -k * extension;
   dz *= -k * extension;
 
   return [dx, dy, dz];
+};
+
+export const calculateSpringForceVector = (
+  position1: THREE.Vector3,
+  position2: THREE.Vector3,
+  k: number,
+  natural_length: number
+): THREE.Vector3 => {
+  let dist = position1.sub(position2);
+
+  const extension: number = dist.length() - natural_length;
+
+  const f = dist.multiplyScalar(-k);
+
+  return f;
 };
 
 //define the return type for the function findXYOffsetMaxAndMins
@@ -197,4 +209,19 @@ export const calculateDampingForce = (
   const fz = -c * vz;
 
   return [fx, fy, fz];
+};
+
+export const cross = (
+  x1: number,
+  y1: number,
+  z1: number,
+  x2: number,
+  y2: number,
+  z2: number
+): number[] => {
+  const x = y1 * z2 - z1 * y2;
+  const y = -1 * (x1 * z2 - z1 * x2);
+  const z = x1 * y2 - y1 * x2;
+
+  return [x, y, z];
 };

@@ -3,6 +3,8 @@ import { calculateDampingForce, calculateSpringForce } from "./helperFunctions";
 
 export const runSim = (
   verticesPosArray: Float32Array,
+  mass: number,
+  dampingRatio: number,
   springArrays: number[][][],
   nTimestep: number,
   dt: number,
@@ -11,6 +13,9 @@ export const runSim = (
   console.log("starting simulation");
 
   const nVertices = verticesPosArray.length / 3;
+
+  //this is the mass of a single particle
+  const massP = mass / nVertices;
 
   console.log(
     "p will be " +
@@ -43,10 +48,12 @@ export const runSim = (
 
   // main simulation loop
 
-  // loop over time steps
+  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 1 };
+
   console.log("Starting simulation loop");
   console.time();
 
+  // loop over time steps
   for (let t = 1; t < nTimestep; t++) {
     for (let i = 0; i < nVertices; i++) {
       let stride = i * 3 + t * (nVertices * 3);
@@ -54,19 +61,21 @@ export const runSim = (
 
       let vStride = i * 3; // different for v because its only stored for 1 timestep at a time
 
-      let x_previous = p[previousStride + 0];
-      let y_previous = p[previousStride + 1];
-      let z_previous = p[previousStride + 2];
+      let x = p[previousStride + 0];
+      let y = p[previousStride + 1];
+      let z = p[previousStride + 2];
 
-      let vx_previous = v[vStride + 0];
-      let vy_previous = v[vStride + 1];
-      let vz_previous = v[vStride + 2];
+      let vx = v[vStride + 0];
+      let vy = v[vStride + 1];
+      let vz = v[vStride + 2];
 
-      let ax = 0;
-      let ay = 0;
-      let az = 0;
+      let fx = 0;
+      let fy = 0;
+      let fz = 0;
 
-      for (let j = 0; j < springArrays[i].length; j++) {
+      const nSprings = springArrays[i].length;
+
+      for (let j = 0; j < nSprings; j++) {
         let otherIndex = springArrays[i][j][0];
         let springL = springArrays[i][j][1];
 
@@ -76,10 +85,10 @@ export const runSim = (
         let y_other = p[otherStride + 1];
         let z_other = p[otherStride + 2];
 
-        let [aSpringX, aSpringY, aSpringZ] = calculateSpringForce(
-          x_previous,
-          y_previous,
-          z_previous,
+        let [fSpringX, fSpringY, fSpringZ] = calculateSpringForce(
+          x,
+          y,
+          z,
           x_other,
           y_other,
           z_other,
@@ -87,37 +96,48 @@ export const runSim = (
           springL
         );
 
-        ax += aSpringX;
-        ay += aSpringY;
-        az += aSpringZ;
+        fx += fSpringX;
+        fy += fSpringY;
+        fz += fSpringZ;
       }
 
-      let [aDamperX, aDamperY, aDamperZ] = calculateDampingForce(
-        vx_previous,
-        vy_previous,
-        vz_previous,
-        1
+      let [fDamperX, fDamperY, fDamperZ] = calculateDampingForce(
+        vx,
+        vy,
+        vz,
+        dampingRatio
       );
 
-      ax += aDamperX;
-      ay += aDamperY;
-      az += aDamperZ;
+      fx += fDamperX;
+      fy += fDamperY;
+      fz += fDamperZ;
 
-      let vx = vx_previous + ax * dt;
-      let vy = vy_previous + ay * dt;
-      let vz = vz_previous + az * dt;
+      const dxl = x - light.x;
+      const dyl = y - light.y;
 
-      let x = x_previous + vx * dt;
-      let y = y_previous + vy * dt;
-      let z = z_previous + vz * dt;
+      if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+        fz -= light.mag;
+      }
 
-      v[vStride + 0] = vx;
-      v[vStride + 1] = vy;
-      v[vStride + 2] = vz;
+      const ax = fx / massP;
+      const ay = fy / massP;
+      const az = fz / massP;
 
-      p[stride + 0] = x;
-      p[stride + 1] = y;
-      p[stride + 2] = z;
+      let vx_new = vx + ax * dt;
+      let vy_new = vy + ay * dt;
+      let vz_new = vz + az * dt;
+
+      let x_new = x + vx_new * dt;
+      let y_new = y + vy_new * dt;
+      let z_new = z + vz_new * dt;
+
+      v[vStride + 0] = vx_new;
+      v[vStride + 1] = vy_new;
+      v[vStride + 2] = vz_new;
+
+      p[stride + 0] = x_new;
+      p[stride + 1] = y_new;
+      p[stride + 2] = z_new;
     }
   }
   console.log("Finished simulation loop");

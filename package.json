@@ -12,7 +12,8 @@
     "asbuild:release": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release",
     "start": "npx serve .",
-    "testas": "watchexec -w assembly -w tests 'npm run asbuild:debug; node tests/index.js'"
+    "testas": "watchexec -w assembly -w tests 'npm run asbuild:debug; node tests/index.js'",
+    "benchmark": "ts-node ./src/benchmark.ts"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.19.4",
