@@ -29,9 +29,9 @@ describe("RowAndColToIndex", () => {
     const nRows = 5;
     const nCols = nRows;
 
-    const Row = 1;
-    const Col = 1;
+    const Row = 2;
+    const Col = 3;
 
-    expect(RowAndColToIndex(Row, Col, nCols)).toEqual(6);
+    expect(RowAndColToIndex(Row, Col, nCols)).toEqual(13);
   });
 });

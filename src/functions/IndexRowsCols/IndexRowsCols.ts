@@ -9,7 +9,7 @@ export const IndexToRowAndCol = (
 export const RowAndColToIndex = (
   Row: number,
   Col: number,
-  nCols: number
+  nRows: number
 ): number => {
-  return nCols * Col + Row;
+  return nRows * Row + Col;
 };
