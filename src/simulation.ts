@@ -1,5 +1,8 @@
 import * as THREE from "three";
-import { calculateDampingForce, calculateSpringForce } from "./helperFunctions";
+import {
+  calculateDampingForce,
+  calculateSpringForce,
+} from "./functions/forces/forces";
 
 export const runSim = (
   verticesPosArray: Float32Array,
@@ -56,10 +59,13 @@ export const runSim = (
   // loop over time steps
   for (let t = 1; t < nTimestep; t++) {
     for (let i = 0; i < nVertices; i++) {
+      //stride value for this vertex at this timestep
       let stride = i * 3 + t * (nVertices * 3);
+
+      //stride value for this vertex in the previous timestep
       let previousStride = stride - nVertices * 3;
 
-      let vStride = i * 3; // different for v because its only stored for 1 timestep at a time
+      let vStride = i * 3; // stride different for v because its only stored for 1 timestep at a time
 
       let x = p[previousStride + 0];
       let y = p[previousStride + 1];
@@ -75,9 +81,11 @@ export const runSim = (
 
       const nSprings = springArrays[i].length;
 
+      //for each spring attached to the vertex
       for (let j = 0; j < nSprings; j++) {
-        let otherIndex = springArrays[i][j][0];
-        let springL = springArrays[i][j][1];
+        let springData = springArrays[i][j];
+        let otherIndex = springData[0];
+        let springL = springData[1];
 
         let otherStride = otherIndex * 3 + (t - 1) * nVertices * 3;
 
@@ -111,6 +119,8 @@ export const runSim = (
       fx += fDamperX;
       fy += fDamperY;
       fz += fDamperZ;
+
+      //finding out if the vertex is in the light
 
       const dxl = x - light.x;
       const dyl = y - light.y;

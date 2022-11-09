@@ -1,4 +1,4 @@
-import { cross } from "../helperFunctions";
+import { cross } from "./vector";
 
 describe("cross", () => {
   it("should calculate the correct vector", () => {

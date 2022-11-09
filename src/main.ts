@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { getSpringIndicesArray } from "./helperFunctions";
+import { getSpringIndicesArray } from "./functions/springArray/springArray";
 import { runSim } from "./simulation";
 
 // @ts-ignore
@@ -8,7 +8,7 @@ import vertexShader from "./shaders/vertex.glsl";
 // @ts-ignore
 import fragmentShader from "./shaders/fragment.glsl";
 
-console.log("ran cpuMain.ts");
+console.log("ran main.ts");
 
 let t = 0;
 let speed = 1;
@@ -16,7 +16,7 @@ let playing = true;
 
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 10;
+const nWidthSegments = 3;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
@@ -89,7 +89,7 @@ var intervalId = window.setInterval(function () {
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
 var renderer = new THREE.WebGLRenderer({ canvas });
-renderer.setSize(window.innerWidth, window.innerHeight / 2);
+renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
 // document.body.appendChild( renderer.domElement );
 
 // const stats = new Stats();
@@ -106,10 +106,7 @@ const camera = new THREE.PerspectiveCamera(
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-//const gridHelper = new GridHelper(30);
-//scene.add(gridHelper);
-
-camera.position.set(1, 0.5, 2).setLength(1);
+camera.position.set(1, 0.5, 2).setLength(2);
 controls.update();
 
 const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);
@@ -125,6 +122,14 @@ const springArrays = getSpringIndicesArray(
   xDepth,
   yDepth
 );
+
+let springCount = 0;
+
+for (let i = 0; i < springArrays.length; i++) {
+  springCount += springArrays[i].length;
+}
+
+console.log("Number of springs: " + springCount);
 
 const nTimestep: number = 2000;
 // const nTimestep: number = 200000;

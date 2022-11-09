@@ -2,7 +2,7 @@ import * as THREE from "three";
 import {
   calculateSpringForce,
   calculateSpringForceVector,
-} from "./helperFunctions";
+} from "./functions/forces/forces";
 
 const fn1 = calculateSpringForce;
 const fn2 = calculateSpringForceVector;
