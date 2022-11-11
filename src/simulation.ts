@@ -6,12 +6,13 @@ import {
 
 export const runSim = (
   verticesPosArray: Float32Array,
+  triangleVerticesArray: Uint16Array,
   mass: number,
+  k: number,
   dampingRatio: number,
   springArrays: number[][][],
   nTimestep: number,
-  dt: number,
-  k: number
+  dt: number
 ): Float32Array => {
   console.log("starting simulation");
 
@@ -51,7 +52,7 @@ export const runSim = (
 
   // main simulation loop
 
-  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 1 };
+  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 0.1 };
 
   console.log("Starting simulation loop");
   console.time();

@@ -7,21 +7,25 @@ import { runSim } from "./simulation";
 import vertexShader from "./shaders/vertex.glsl";
 // @ts-ignore
 import fragmentShader from "./shaders/fragment.glsl";
+import {
+  calculateCentroidOfTriangle,
+  calculateSurfaceNormals,
+} from "./functions/vertexNormals/vertexNormals";
 
 console.log("ran main.ts");
 
 let t = 0;
 let speed = 1;
-let playing = true;
+let playing = false;
 
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 3;
+const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 100;
-const dampingRatio = 0.1;
+const k = 20;
+const dampingRatio = 1;
 const dt = 0.01;
 const playbackFPS = 24;
 
@@ -74,6 +78,56 @@ const updateModel = (): void => {
 
   geometry.setAttribute("position", pBuffer);
   geometry.computeVertexNormals();
+
+  surfaceNormalArrows.forEach((arrow) => {
+    scene.remove(arrow);
+  });
+
+  const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
+
+  for (let i = 0; i < nFaces; i++) {
+    if (true) {
+      const stride = i * 3;
+
+      const nx = surfaceNormals[stride + 0];
+      const ny = surfaceNormals[stride + 1];
+      const nz = surfaceNormals[stride + 2];
+
+      const n = new THREE.Vector3(nx, ny, nz);
+
+      const ax = p_t[triangleIndicesArray[stride + 0] * 3 + 0];
+      const ay = p_t[triangleIndicesArray[stride + 0] * 3 + 1];
+      const az = p_t[triangleIndicesArray[stride + 0] * 3 + 2];
+
+      const bx = p_t[triangleIndicesArray[stride + 1] * 3 + 0];
+      const by = p_t[triangleIndicesArray[stride + 1] * 3 + 1];
+      const bz = p_t[triangleIndicesArray[stride + 1] * 3 + 2];
+
+      const cx = p_t[triangleIndicesArray[stride + 2] * 3 + 0];
+      const cy = p_t[triangleIndicesArray[stride + 2] * 3 + 1];
+      const cz = p_t[triangleIndicesArray[stride + 2] * 3 + 2];
+
+      const [ox, oy, oz] = calculateCentroidOfTriangle(
+        ax,
+        ay,
+        az,
+        bx,
+        by,
+        bz,
+        cx,
+        cy,
+        cz
+      );
+
+      const o = new THREE.Vector3(ox, oy, oz);
+
+      const arrow = new THREE.ArrowHelper(n, o, 0.25);
+
+      scene.add(arrow);
+
+      surfaceNormalArrows.push(arrow);
+    }
+  }
 };
 
 var intervalId = window.setInterval(function () {
@@ -113,10 +167,10 @@ const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);
 
 const vertices = geometry.attributes.position;
 
-const verticesPosArray = vertices.array as Float32Array;
+const vertexPosArray = vertices.array as Float32Array;
 
 const springArrays = getSpringIndicesArray(
-  verticesPosArray,
+  vertexPosArray,
   nRows,
   nCols,
   xDepth,
@@ -131,7 +185,7 @@ for (let i = 0; i < springArrays.length; i++) {
 
 console.log("Number of springs: " + springCount);
 
-const nTimestep: number = 2000;
+const nTimestep: number = 200;
 // const nTimestep: number = 200000;
 
 timestepSliderElement.max = (nTimestep - 1).toString();
@@ -140,14 +194,19 @@ var startTime = performance.now();
 
 const mass = (d * d) / AM_ratio;
 
+const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
+
+const nFaces = triangleIndicesArray.length / 3;
+
 const p = runSim(
-  verticesPosArray,
+  vertexPosArray,
+  triangleIndicesArray,
   mass,
+  k,
   dampingRatio,
   springArrays,
   nTimestep,
-  dt,
-  k
+  dt
 );
 
 var endTime = performance.now();
@@ -167,22 +226,12 @@ const axesHelper = new THREE.AxesHelper();
 
 scene.add(axesHelper);
 
+const surfaceNormalArrows: THREE.ArrowHelper[] = [];
+
+playing = true;
+
 const animate = async (time: number) => {
-  //you were about to have the buffer atribute set the positions of the vertices
-
-  // for (let i = 0; i < vertices.count; i++){
-
-  //   let stride = i*3 + (t * vertices.count*3);
-
-  //   x = p[stride];
-  //   y = p[stride+1];
-  //   z = p[stride+2];
-
-  //   geometry.attributes.position.setXYZ(i,x,y,z);
-  // }
-
-  // geometry.attributes.position.needsUpdate = true;
-
+  //remove all the arrow helpers from the previous frame
   renderer.render(scene, camera);
 };
 renderer.setAnimationLoop(animate);
