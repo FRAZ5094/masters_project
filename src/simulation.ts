@@ -52,8 +52,6 @@ export const runSim = (
 
   // main simulation loop
 
-  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 0.1 };
-
   console.log("Starting simulation loop");
   console.time();
 
@@ -76,71 +74,22 @@ export const runSim = (
       let vy = v[vStride + 1];
       let vz = v[vStride + 2];
 
-      let fx = 0;
-      let fy = 0;
-      let fz = 0;
-
-      const nSprings = springArrays[i].length;
-
-      //for each spring attached to the vertex
-      for (let j = 0; j < nSprings; j++) {
-        let springData = springArrays[i][j];
-        let otherIndex = springData[0];
-        let springL = springData[1];
-
-        let otherStride = otherIndex * 3 + (t - 1) * nVertices * 3;
-
-        let x_other = p[otherStride + 0];
-        let y_other = p[otherStride + 1];
-        let z_other = p[otherStride + 2];
-
-        let [fSpringX, fSpringY, fSpringZ] = calculateSpringForce(
-          x,
-          y,
-          z,
-          x_other,
-          y_other,
-          z_other,
-          k,
-          springL
-        );
-
-        fx += fSpringX;
-        fy += fSpringY;
-        fz += fSpringZ;
-      }
-
-      let [fDamperX, fDamperY, fDamperZ] = calculateDampingForce(
+      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = euler(
+        x,
+        y,
+        z,
         vx,
         vy,
         vz,
-        dampingRatio
+        t,
+        dt,
+        massP,
+        k,
+        springArrays[i],
+        dampingRatio,
+        nVertices,
+        p
       );
-
-      fx += fDamperX;
-      fy += fDamperY;
-      fz += fDamperZ;
-
-      //finding out if the vertex is in the light
-
-      const dxl = x - light.x;
-      const dyl = y - light.y;
-
-      if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
-        fz -= light.mag;
-      }
-
-      const ax = fx / massP;
-      const ay = fy / massP;
-      const az = fz / massP;
-
-      let vx_new = vx + ax * dt;
-      let vy_new = vy + ay * dt;
-      let vz_new = vz + az * dt;
-
-      let x_new = x + vx_new * dt;
-      let y_new = y + vy_new * dt;
-      let z_new = z + vz_new * dt;
 
       v[vStride + 0] = vx_new;
       v[vStride + 1] = vy_new;
@@ -155,4 +104,126 @@ export const runSim = (
   console.timeEnd();
 
   return p;
+};
+
+export const f = (
+  x: number,
+  y: number,
+  z: number,
+  vx: number,
+  vy: number,
+  vz: number,
+  t: number,
+  dt: number,
+  massP: number,
+  k: number,
+  springArray: number[][],
+  dampingRatio: number,
+  nVertices: number,
+  p: Float32Array
+): number[] => {
+  let fx = 0;
+  let fy = 0;
+  let fz = 0;
+
+  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 0.1 };
+
+  const nSprings = springArray.length;
+
+  //for each spring attached to the vertex
+  for (let j = 0; j < nSprings; j++) {
+    let springData = springArray[j];
+    let otherIndex = springData[0];
+    let springL = springData[1];
+
+    let otherStride = otherIndex * 3 + (t - 1) * nVertices * 3;
+
+    let x_other = p[otherStride + 0];
+    let y_other = p[otherStride + 1];
+    let z_other = p[otherStride + 2];
+
+    let [fSpringX, fSpringY, fSpringZ] = calculateSpringForce(
+      x,
+      y,
+      z,
+      x_other,
+      y_other,
+      z_other,
+      k,
+      springL
+    );
+
+    fx += fSpringX;
+    fy += fSpringY;
+    fz += fSpringZ;
+  }
+
+  let [fDamperX, fDamperY, fDamperZ] = calculateDampingForce(
+    vx,
+    vy,
+    vz,
+    dampingRatio
+  );
+
+  fx += fDamperX;
+  fy += fDamperY;
+  fz += fDamperZ;
+
+  //finding out if the vertex is in the light
+
+  const dxl = x - light.x;
+  const dyl = y - light.y;
+
+  if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+    fz -= light.mag;
+  }
+
+  const ax = fx / massP;
+  const ay = fy / massP;
+  const az = fz / massP;
+
+  let vx_new = vx + ax * dt;
+  let vy_new = vy + ay * dt;
+  let vz_new = vz + az * dt;
+
+  let x_new = x + vx_new * dt;
+  let y_new = y + vy_new * dt;
+  let z_new = z + vz_new * dt;
+
+  return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
+};
+
+export const euler = (
+  x: number,
+  y: number,
+  z: number,
+  vx: number,
+  vy: number,
+  vz: number,
+  t: number,
+  dt: number,
+  massP: number,
+  k: number,
+  springArray: number[][],
+  dampingRatio: number,
+  nVertices: number,
+  p: Float32Array
+): number[] => {
+  const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = f(
+    x,
+    y,
+    z,
+    vx,
+    vy,
+    vz,
+    t,
+    dt,
+    massP,
+    k,
+    springArray,
+    dampingRatio,
+    nVertices,
+    p
+  );
+  return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
 };
