@@ -124,7 +124,7 @@ export const calculateVertexNormals = (
 ): Float32Array => {
   const nVertices: number = trianglesAttachedToVertexArray.length;
 
-  const vertexNormals = new Float32Array(nVertices);
+  const vertexNormals = new Float32Array(nVertices * 3);
 
   for (let i = 0; i < nVertices; i++) {
     const nTriangles = trianglesAttachedToVertexArray[i].length / 3;

@@ -126,7 +126,7 @@ describe("calculateVertexNormals", () => {
       nCols
     );
 
-    let ans = new Float32Array(nCols * nRows).map((value, i) =>
+    let ans = new Float32Array(nCols * nRows * 3).map((value, i) =>
       i % 3 == 2 ? 1 : 0
     );
 

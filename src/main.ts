@@ -10,6 +10,8 @@ import fragmentShader from "./shaders/fragment.glsl";
 import {
   calculateCentroidOfTriangle,
   calculateSurfaceNormals,
+  calculateVertexNormals,
+  getTrianglesAttachedToVertexArray,
 } from "./functions/vertexNormals/vertexNormals";
 
 console.log("ran main.ts");
@@ -18,9 +20,10 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
+const nTimestep: number = 2000;
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 4;
+const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
@@ -29,6 +32,7 @@ const dampingRatio = 1;
 const dt = 0.01;
 const playbackFPS = 24;
 let showSurfaceNormals = false;
+let showVertexNormals = true;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -85,7 +89,9 @@ const updateModel = (): void => {
       scene.remove(arrow);
     });
 
-    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
+    surfaceNormalArrows = [];
+
+    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndices);
 
     for (let i = 0; i < nFaces; i++) {
       const stride = i * 3;
@@ -96,17 +102,17 @@ const updateModel = (): void => {
 
       const n = new THREE.Vector3(nx, ny, nz);
 
-      const ax = p_t[triangleIndicesArray[stride + 0] * 3 + 0];
-      const ay = p_t[triangleIndicesArray[stride + 0] * 3 + 1];
-      const az = p_t[triangleIndicesArray[stride + 0] * 3 + 2];
+      const ax = p_t[triangleIndices[stride + 0] * 3 + 0];
+      const ay = p_t[triangleIndices[stride + 0] * 3 + 1];
+      const az = p_t[triangleIndices[stride + 0] * 3 + 2];
 
-      const bx = p_t[triangleIndicesArray[stride + 1] * 3 + 0];
-      const by = p_t[triangleIndicesArray[stride + 1] * 3 + 1];
-      const bz = p_t[triangleIndicesArray[stride + 1] * 3 + 2];
+      const bx = p_t[triangleIndices[stride + 1] * 3 + 0];
+      const by = p_t[triangleIndices[stride + 1] * 3 + 1];
+      const bz = p_t[triangleIndices[stride + 1] * 3 + 2];
 
-      const cx = p_t[triangleIndicesArray[stride + 2] * 3 + 0];
-      const cy = p_t[triangleIndicesArray[stride + 2] * 3 + 1];
-      const cz = p_t[triangleIndicesArray[stride + 2] * 3 + 2];
+      const cx = p_t[triangleIndices[stride + 2] * 3 + 0];
+      const cy = p_t[triangleIndices[stride + 2] * 3 + 1];
+      const cz = p_t[triangleIndices[stride + 2] * 3 + 2];
 
       const [ox, oy, oz] = calculateCentroidOfTriangle(
         ax,
@@ -127,6 +133,43 @@ const updateModel = (): void => {
       scene.add(arrow);
 
       surfaceNormalArrows.push(arrow);
+    }
+  }
+
+  if (showVertexNormals) {
+    vertexNormalArrows.forEach((arrow) => {
+      scene.remove(arrow);
+    });
+
+    vertexNormalArrows = [];
+
+    const vertexNormals = calculateVertexNormals(
+      trianglesAttachedToVertexArray,
+      p_t
+    );
+
+    const nVertices = nRows * nCols;
+
+    for (let i = 0; i < nVertices; i++) {
+      const stride = i * 3;
+
+      const dir = new THREE.Vector3(
+        vertexNormals[stride + 0],
+        vertexNormals[stride + 1],
+        vertexNormals[stride + 2]
+      );
+
+      const origin = new THREE.Vector3(
+        p_t[stride + 0],
+        p_t[stride + 1],
+        p_t[stride + 2]
+      );
+
+      const arrow = new THREE.ArrowHelper(dir, origin, 0.1);
+
+      scene.add(arrow);
+
+      vertexNormalArrows.push(arrow);
     }
   }
 };
@@ -186,22 +229,25 @@ for (let i = 0; i < springArrays.length; i++) {
 
 console.log("Number of springs: " + springCount);
 
-const nTimestep: number = 200;
-// const nTimestep: number = 200000;
-
 timestepSliderElement.max = (nTimestep - 1).toString();
 
 var startTime = performance.now();
 
 const mass = (d * d) / AM_ratio;
 
-const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
+const triangleIndices = geometry.getIndex()!.array as Uint16Array;
 
-const nFaces = triangleIndicesArray.length / 3;
+const trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
+  triangleIndices,
+  nRows,
+  nCols
+);
+
+const nFaces = triangleIndices.length / 3;
 
 const p = runSim(
   vertexPosArray,
-  triangleIndicesArray,
+  triangleIndices,
   mass,
   k,
   dampingRatio,
@@ -227,7 +273,8 @@ const axesHelper = new THREE.AxesHelper();
 
 scene.add(axesHelper);
 
-const surfaceNormalArrows: THREE.ArrowHelper[] = [];
+let surfaceNormalArrows: THREE.ArrowHelper[] = [];
+let vertexNormalArrows: THREE.ArrowHelper[] = [];
 
 playing = true;
 
