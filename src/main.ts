@@ -20,7 +20,7 @@ let playing = false;
 
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 10;
+const nWidthSegments = 4;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
@@ -28,6 +28,7 @@ const k = 20;
 const dampingRatio = 1;
 const dt = 0.01;
 const playbackFPS = 24;
+let showSurfaceNormals = false;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -79,14 +80,14 @@ const updateModel = (): void => {
   geometry.setAttribute("position", pBuffer);
   geometry.computeVertexNormals();
 
-  surfaceNormalArrows.forEach((arrow) => {
-    scene.remove(arrow);
-  });
+  if (showSurfaceNormals) {
+    surfaceNormalArrows.forEach((arrow) => {
+      scene.remove(arrow);
+    });
 
-  const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
+    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
 
-  for (let i = 0; i < nFaces; i++) {
-    if (true) {
+    for (let i = 0; i < nFaces; i++) {
       const stride = i * 3;
 
       const nx = surfaceNormals[stride + 0];
