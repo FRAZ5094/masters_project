@@ -74,7 +74,7 @@ export const runSim = (
       let vy = v[vStride + 1];
       let vz = v[vStride + 2];
 
-      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = euler(
+      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = rk4(
         x,
         y,
         z,
@@ -114,19 +114,18 @@ export const f = (
   vy: number,
   vz: number,
   t: number,
-  dt: number,
-  massP: number,
   k: number,
   springArray: number[][],
   dampingRatio: number,
   nVertices: number,
-  p: Float32Array
+  p: Float32Array,
+  mass: number
 ): number[] => {
   let fx = 0;
   let fy = 0;
   let fz = 0;
 
-  const light = { x: 0, y: 0, z: 2, r: 0.5, mag: 0.1 };
+  const light = { x: 0, y: 0, z: 2, r: 0.25, mag: 0.1 };
 
   const nSprings = springArray.length;
 
@@ -178,19 +177,11 @@ export const f = (
     fz -= light.mag;
   }
 
-  const ax = fx / massP;
-  const ay = fy / massP;
-  const az = fz / massP;
+  const ax = fx / mass;
+  const ay = fy / mass;
+  const az = fz / mass;
 
-  let vx_new = vx + ax * dt;
-  let vy_new = vy + ay * dt;
-  let vz_new = vz + az * dt;
-
-  let x_new = x + vx_new * dt;
-  let y_new = y + vy_new * dt;
-  let z_new = z + vz_new * dt;
-
-  return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
+  return [ax, ay, az];
 };
 
 export const euler = (
@@ -209,7 +200,7 @@ export const euler = (
   nVertices: number,
   p: Float32Array
 ): number[] => {
-  const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = f(
+  const [ax, ay, az] = f(
     x,
     y,
     z,
@@ -217,13 +208,112 @@ export const euler = (
     vy,
     vz,
     t,
-    dt,
-    massP,
     k,
     springArray,
     dampingRatio,
     nVertices,
-    p
+    p,
+    massP
   );
+
+  let vx_new = vx + ax * dt;
+  let vy_new = vy + ay * dt;
+  let vz_new = vz + az * dt;
+
+  let x_new = x + vx_new * dt;
+  let y_new = y + vy_new * dt;
+  let z_new = z + vz_new * dt;
+
   return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
+};
+
+export const rk4 = (
+  x: number,
+  y: number,
+  z: number,
+  vx: number,
+  vy: number,
+  vz: number,
+  t: number,
+  dt: number,
+  massP: number,
+  k: number,
+  springArray: number[][],
+  dampingRatio: number,
+  nVertices: number,
+  p: Float32Array
+): number[] => {
+  const [k1vx, k1vy, k1vz] = f(
+    x,
+    y,
+    z,
+    vx,
+    vy,
+    vz,
+    t,
+    k,
+    springArray,
+    dampingRatio,
+    nVertices,
+    p,
+    massP
+  );
+
+  const [k2vx, k2vy, k2vz] = f(
+    x + dt * (k1vx / 2),
+    y + dt * (k1vy / 2),
+    z + dt * (k1vz / 2),
+    vx,
+    vy,
+    vz,
+    t,
+    k,
+    springArray,
+    dampingRatio,
+    nVertices,
+    p,
+    massP
+  );
+
+  const [k3vx, k3vy, k3vz] = f(
+    x + dt * (k2vx / 2),
+    y + dt * (k2vy / 2),
+    z + dt * (k2vz / 2),
+    vx,
+    vy,
+    vz,
+    t,
+    k,
+    springArray,
+    dampingRatio,
+    nVertices,
+    p,
+    massP
+  );
+
+  const [k4vx, k4vy, k4vz] = f(
+    x + dt * k3vx,
+    y + dt * k3vy,
+    z + dt * k3vz,
+    vx,
+    vy,
+    vz,
+    t,
+    k,
+    springArray,
+    dampingRatio,
+    nVertices,
+    p,
+    massP
+  );
+
+  vx += (1 / 6) * dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx);
+  vy += (1 / 6) * dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy);
+  vz += (1 / 6) * dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz);
+
+  x += dt * vx;
+  y += dt * vy;
+  z += dt * vz;
+
+  return [x, y, z, vx, vy, vz];
 };

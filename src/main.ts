@@ -27,9 +27,9 @@ const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 20;
+const k = 1;
 const dampingRatio = 1;
-const dt = 0.01;
+const dt = 0.1;
 const playbackFPS = 24;
 let showSurfaceNormals = false;
 let showVertexNormals = true;
@@ -187,7 +187,7 @@ var intervalId = window.setInterval(function () {
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
 var renderer = new THREE.WebGLRenderer({ canvas });
-renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
+renderer.setSize(window.innerWidth, window.innerHeight * 0.9);
 // document.body.appendChild( renderer.domElement );
 
 // const stats = new Stats();
