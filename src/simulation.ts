@@ -4,6 +4,8 @@ import {
   calculateSpringForce,
 } from "./functions/forces/forces";
 
+export type integrators = "euler" | "rk4";
+
 export const runSim = (
   verticesPosArray: Float32Array,
   triangleVerticesArray: Uint16Array,
@@ -12,9 +14,16 @@ export const runSim = (
   dampingRatio: number,
   springArrays: number[][][],
   nTimestep: number,
-  dt: number
+  dt: number,
+  integratorName: integrators
 ): Float32Array => {
   console.log("starting simulation");
+
+  let integrator;
+
+  if (integratorName == "euler") integrator = euler;
+  else if (integratorName == "rk4") integrator = rk4;
+  else integrator = euler;
 
   const nVertices = verticesPosArray.length / 3;
 
@@ -74,7 +83,7 @@ export const runSim = (
       let vy = v[vStride + 1];
       let vz = v[vStride + 2];
 
-      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = rk4(
+      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = integrator(
         x,
         y,
         z,

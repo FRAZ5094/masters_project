@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getSpringIndicesArray } from "./functions/springArray/springArray";
-import { runSim } from "./simulation";
+import { integrators, runSim } from "./simulation";
 
 // @ts-ignore
 import vertexShader from "./shaders/vertex.glsl";
@@ -32,7 +32,9 @@ const dampingRatio = 1;
 const dt = 0.1;
 const playbackFPS = 24;
 let showSurfaceNormals = false;
-let showVertexNormals = true;
+let showVertexNormals = false;
+
+const integrator: integrators = "rk4";
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -253,7 +255,8 @@ const p = runSim(
   dampingRatio,
   springArrays,
   nTimestep,
-  dt
+  dt,
+  integrator
 );
 
 var endTime = performance.now();
