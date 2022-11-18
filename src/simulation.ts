@@ -268,13 +268,17 @@ export const rk4 = (
     massP
   );
 
+  const k1x = vx;
+  const k1y = vy;
+  const k1z = vz;
+
   const [k2vx, k2vy, k2vz] = f(
-    x + dt * (k1vx / 2),
-    y + dt * (k1vy / 2),
-    z + dt * (k1vz / 2),
-    vx,
-    vy,
-    vz,
+    x + dt * (k1x / 2),
+    y + dt * (k1y / 2),
+    z + dt * (k1z / 2),
+    vx + dt * (k1vx / 2),
+    vy + dt * (k1vy / 2),
+    vz + dt * (k1vz / 2),
     t,
     k,
     springArray,
@@ -283,14 +287,18 @@ export const rk4 = (
     p,
     massP
   );
+
+  const k2x = vx + dt * (k1vx / 2);
+  const k2y = vy + dt * (k1vy / 2);
+  const k2z = vz + dt * (k1vz / 2);
 
   const [k3vx, k3vy, k3vz] = f(
-    x + dt * (k2vx / 2),
-    y + dt * (k2vy / 2),
-    z + dt * (k2vz / 2),
-    vx,
-    vy,
-    vz,
+    x + dt * (k2x / 2),
+    y + dt * (k2y / 2),
+    z + dt * (k2z / 2),
+    vx + dt * (k2vx / 2),
+    vy + dt * (k2vy / 2),
+    vz + dt * (k2vz / 2),
     t,
     k,
     springArray,
@@ -299,14 +307,18 @@ export const rk4 = (
     p,
     massP
   );
+
+  const k3x = vx + dt * (k2vx / 2);
+  const k3y = vy + dt * (k2vy / 2);
+  const k3z = vz + dt * (k2vz / 2);
 
   const [k4vx, k4vy, k4vz] = f(
-    x + dt * k3vx,
-    y + dt * k3vy,
-    z + dt * k3vz,
-    vx,
-    vy,
-    vz,
+    x + dt * k3x,
+    y + dt * k3y,
+    z + dt * k3z,
+    vx + dt * k3vx,
+    vy + dt * k3vy,
+    vz + dt * k3vz,
     t,
     k,
     springArray,
@@ -316,13 +328,17 @@ export const rk4 = (
     massP
   );
 
-  vx += (1 / 6) * dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx);
-  vy += (1 / 6) * dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy);
-  vz += (1 / 6) * dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz);
+  const k4x = vx + dt * k3vx;
+  const k4y = vy + dt * k3vy;
+  const k4z = vz + dt * k3vz;
 
-  x += dt * vx;
-  y += dt * vy;
-  z += dt * vz;
+  vx += (dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)) / 6;
+  vy += (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
+  vz += (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
+
+  x += (dt * (k1x + 2 * k2x + 2 * k3x + k4x)) / 6;
+  y += (dt * (k1y + 2 * k2y + 2 * k3y + k4y)) / 6;
+  z += (dt * (k1z + 2 * k2z + 2 * k3z + k4z)) / 6;
 
   return [x, y, z, vx, vy, vz];
 };
