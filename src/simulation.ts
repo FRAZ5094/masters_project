@@ -1,21 +1,22 @@
-import * as THREE from "three";
 import {
   calculateDampingForce,
   calculateSpringForce,
 } from "./functions/forces/forces";
+import { calculateVertexNormals } from "./functions/vertexNormals/vertexNormals";
+import { dot } from "./functions/vector/vector";
 
 export type integrators = "euler" | "rk4";
 
 export const runSim = (
   verticesPosArray: Float32Array,
-  triangleVerticesArray: Uint16Array,
   mass: number,
   k: number,
   dampingRatio: number,
   springArrays: number[][][],
   nTimestep: number,
   dt: number,
-  integratorName: integrators
+  integratorName: integrators,
+  trianglesAttachedToVertexArray: number[][]
 ): Float32Array => {
   console.log("starting simulation");
 
@@ -66,6 +67,11 @@ export const runSim = (
 
   // loop over time steps
   for (let t = 1; t < nTimestep; t++) {
+    const vertexNormals = calculateVertexNormals(
+      trianglesAttachedToVertexArray,
+      verticesPosArray
+    );
+
     for (let i = 0; i < nVertices; i++) {
       //stride value for this vertex at this timestep
       let stride = i * 3 + t * (nVertices * 3);
@@ -83,6 +89,10 @@ export const runSim = (
       let vy = v[vStride + 1];
       let vz = v[vStride + 2];
 
+      let nx = vertexNormals[i * 3 + 0];
+      let ny = vertexNormals[i * 3 + 1];
+      let nz = vertexNormals[i * 3 + 2];
+
       const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = integrator(
         x,
         y,
@@ -97,7 +107,10 @@ export const runSim = (
         springArrays[i],
         dampingRatio,
         nVertices,
-        p
+        p,
+        nx,
+        ny,
+        nz
       );
 
       v[vStride + 0] = vx_new;
@@ -128,13 +141,25 @@ export const f = (
   dampingRatio: number,
   nVertices: number,
   p: Float32Array,
-  mass: number
+  mass: number,
+  nx: number,
+  ny: number,
+  nz: number
 ): number[] => {
   let fx = 0;
   let fy = 0;
   let fz = 0;
 
-  const light = { x: 0, y: 0, z: 2, r: 0.25, mag: 0.1 };
+  const light = {
+    x: -0.5,
+    y: 0.5,
+    z: 2,
+    r: 0.5,
+    dirx: 0,
+    diry: 0,
+    dirz: 1,
+    mag: 0.01,
+  };
 
   const nSprings = springArray.length;
 
@@ -182,8 +207,13 @@ export const f = (
   const dxl = x - light.x;
   const dyl = y - light.y;
 
+  const scale = dot(light.dirx, light.diry, light.dirz, nx, ny, nz);
+  // const scale = 1;
+
   if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
-    fz -= light.mag;
+    fx -= light.mag * scale * light.dirx;
+    fy -= light.mag * scale * light.diry;
+    fz -= light.mag * scale * light.dirz;
   }
 
   const ax = fx / mass;
@@ -207,7 +237,10 @@ export const euler = (
   springArray: number[][],
   dampingRatio: number,
   nVertices: number,
-  p: Float32Array
+  p: Float32Array,
+  nx: number,
+  ny: number,
+  nz: number
 ): number[] => {
   const [ax, ay, az] = f(
     x,
@@ -222,7 +255,10 @@ export const euler = (
     dampingRatio,
     nVertices,
     p,
-    massP
+    massP,
+    nx,
+    ny,
+    nz
   );
 
   let vx_new = vx + ax * dt;
@@ -250,7 +286,10 @@ export const rk4 = (
   springArray: number[][],
   dampingRatio: number,
   nVertices: number,
-  p: Float32Array
+  p: Float32Array,
+  nx: number,
+  ny: number,
+  nz: number
 ): number[] => {
   const [k1vx, k1vy, k1vz] = f(
     x,
@@ -265,7 +304,10 @@ export const rk4 = (
     dampingRatio,
     nVertices,
     p,
-    massP
+    massP,
+    nx,
+    ny,
+    nz
   );
 
   const k1x = vx;
@@ -285,7 +327,10 @@ export const rk4 = (
     dampingRatio,
     nVertices,
     p,
-    massP
+    massP,
+    nx,
+    ny,
+    nz
   );
 
   const k2x = vx + dt * (k1vx / 2);
@@ -305,7 +350,10 @@ export const rk4 = (
     dampingRatio,
     nVertices,
     p,
-    massP
+    massP,
+    nx,
+    ny,
+    nz
   );
 
   const k3x = vx + dt * (k2vx / 2);
@@ -325,7 +373,10 @@ export const rk4 = (
     dampingRatio,
     nVertices,
     p,
-    massP
+    massP,
+    nx,
+    ny,
+    nz
   );
 
   const k4x = vx + dt * k3vx;

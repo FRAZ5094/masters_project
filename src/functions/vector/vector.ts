@@ -12,3 +12,16 @@ export const cross = (
 
   return [x, y, z];
 };
+
+export const dot = (
+  x1: number,
+  y1: number,
+  z1: number,
+  x2: number,
+  y2: number,
+  z2: number
+): number => {
+  const ans = x1 * x2 + y1 * y2 + z1 * z2;
+
+  return ans;
+};

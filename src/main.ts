@@ -20,16 +20,16 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 2000;
+const nTimestep: number = 4000;
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 10;
+const nWidthSegments = 30;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 10;
-const dampingRatio = 1;
-const dt = 0.1;
+const k = 1;
+const dampingRatio = 0.1;
+const dt = 0.01;
 const playbackFPS = 24;
 let showSurfaceNormals = false;
 let showVertexNormals = false;
@@ -77,6 +77,12 @@ const playbackSpeedDropdown = document.getElementById(
 ) as HTMLSelectElement;
 
 playbackSpeedDropdown.value = speed.toString();
+
+playbackSpeedDropdown.onchange = (e) => {
+  let dropDown = e.target as HTMLSelectElement;
+
+  speed = parseInt(dropDown.value);
+};
 
 const updateModel = (): void => {
   const p_t = p.slice(t * vertices.count * 3, (t + 1) * vertices.count * 3);
@@ -249,14 +255,14 @@ const nFaces = triangleIndices.length / 3;
 
 const p = runSim(
   vertexPosArray,
-  triangleIndices,
   mass,
   k,
   dampingRatio,
   springArrays,
   nTimestep,
   dt,
-  integrator
+  integrator,
+  trianglesAttachedToVertexArray
 );
 
 var endTime = performance.now();
@@ -279,7 +285,7 @@ scene.add(axesHelper);
 let surfaceNormalArrows: THREE.ArrowHelper[] = [];
 let vertexNormalArrows: THREE.ArrowHelper[] = [];
 
-playing = true;
+playButton.click();
 
 const animate = async (time: number) => {
   //remove all the arrow helpers from the previous frame
