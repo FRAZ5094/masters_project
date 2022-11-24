@@ -20,7 +20,7 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 4000;
+const nTimestep: number = 2000;
 const d = 1;
 const AM_ratio = 0.1;
 const nWidthSegments = 30;
@@ -30,9 +30,9 @@ const nRows = nHeightSegments + 1;
 const k = 1;
 const dampingRatio = 0.1;
 const dt = 0.01;
-const playbackFPS = 24;
+const playbackFPS = 60;
 let showSurfaceNormals = false;
-let showVertexNormals = false;
+let showVertexNormals = true;
 
 const integrator: integrators = "rk4";
 
@@ -136,7 +136,7 @@ const updateModel = (): void => {
 
       const o = new THREE.Vector3(ox, oy, oz);
 
-      const arrow = new THREE.ArrowHelper(n, o, 0.25);
+      const arrow = new THREE.ArrowHelper(n, o, 0.05);
 
       scene.add(arrow);
 
@@ -173,7 +173,7 @@ const updateModel = (): void => {
         p_t[stride + 2]
       );
 
-      const arrow = new THREE.ArrowHelper(dir, origin, 0.1);
+      const arrow = new THREE.ArrowHelper(dir, origin, 0.05);
 
       scene.add(arrow);
 
@@ -212,7 +212,7 @@ const camera = new THREE.PerspectiveCamera(
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-camera.position.set(1, 0.5, 2).setLength(2);
+camera.position.set(1, 0.5, 2).setLength(1);
 controls.update();
 
 const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);

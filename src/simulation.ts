@@ -42,7 +42,6 @@ export const runSim = (
       "mb"
   );
 
-  //initialize the arrays for storing the accelerations, velocities and positions for each time step
   console.log("Initializing memory");
 
   console.time();
@@ -151,13 +150,13 @@ export const f = (
   let fz = 0;
 
   const light = {
-    x: -0.5,
+    x: 0.5,
     y: 0.5,
     z: 2,
     r: 0.5,
     dirx: 0,
     diry: 0,
-    dirz: 1,
+    dirz: -1,
     mag: 0.01,
   };
 
