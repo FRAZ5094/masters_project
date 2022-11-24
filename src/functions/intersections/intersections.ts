@@ -29,14 +29,14 @@ export const rayTriangleIntersection = (
   const SMALL_NUM = 0.00000001;
 
   if (Math.abs(b) < SMALL_NUM) {
-    console.log("failed on abs check");
+    // console.log("failed on abs check");
     return false;
   }
 
   const r = a / b;
 
   if (r < 0.0) {
-    console.log("failed on r < 0.0");
+    // console.log("failed on r < 0.0");
     return false;
   }
 
@@ -44,7 +44,7 @@ export const rayTriangleIntersection = (
   const Iy = p0[1] + r * rayDirY;
   const Iz = p0[2] + r * rayDirZ;
 
-  console.log({ Ix, Iy, Iz });
+  // console.log({ Ix, Iy, Iz });
 
   //correct up to here
 
@@ -56,7 +56,7 @@ export const rayTriangleIntersection = (
   const vy = Tc[1] - Ta[1];
   const vz = Tc[2] - Ta[2];
 
-  console.log(cross(ux, uy, uz, vx, vy, vz));
+  // console.log(cross(ux, uy, uz, vx, vy, vz));
 
   const uu = dot(ux, uy, uz, ux, uy, uz);
   const uv = dot(ux, uy, uz, vx, vy, vz);
@@ -74,15 +74,15 @@ export const rayTriangleIntersection = (
   const s = (uv * wv - vv * wu) / denom;
 
   if (s < 0 || s > 1) {
-    console.log("failed on s < 0 || s > 1");
-    console.log({ s });
+    // console.log("failed on s < 0 || s > 1");
+    // console.log({ s });
     return false;
   }
   const t = (uv * wu - uu * wv) / denom;
 
   if (t < 0 || s + t > 1) {
-    console.log("failed on t < 0 || s + t > 1");
-    console.log({ t });
+    // console.log("failed on t < 0 || s + t > 1");
+    // console.log({ t });
     return false;
   }
 
