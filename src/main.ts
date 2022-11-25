@@ -23,14 +23,13 @@ let playing = false;
 const nTimestep: number = 2000;
 const d = 1;
 const AM_ratio = 0.1;
-const nWidthSegments = 30;
+const nWidthSegments = 10;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
 const k = 1;
 const dampingRatio = 0.1;
 const dt = 0.01;
-const playbackFPS = 60;
 let showSurfaceNormals = false;
 let showVertexNormals = true;
 

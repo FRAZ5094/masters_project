@@ -1,4 +1,5 @@
 import { dot, cross } from "../vector/vector";
+import { getTrianglesAttachedToVertexArray } from "../vertexNormals/vertexNormals";
 
 export const rayTriangleIntersection = (
   p0: number[],
@@ -14,6 +15,10 @@ export const rayTriangleIntersection = (
   // There is no warranty for this code, and the author of it cannot
   // be held liable for any real or imagined damage from its use.
   // Users of this code must verify correctness for their application.
+
+  //p0 will be the positions of the light source
+  //p1 will be  the position of the vertex
+  //Ta will be the a vertex of the
 
   const rayDirX = p1[0] - p0[0];
   const rayDirY = p1[1] - p0[1];
@@ -87,4 +92,57 @@ export const rayTriangleIntersection = (
   }
 
   return true;
+};
+
+export const isVertexSelfShadowed = (
+  vertexIndex: number,
+  lightPos: number[],
+  vertexPosArray: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  surfaceNormalsArray: Float32Array
+): boolean => {
+  const nTriangles = triangleIndicesArray.length / 3;
+
+  const p0 = [
+    vertexPosArray[vertexIndex * 3 + 0],
+    vertexPosArray[vertexIndex * 3 + 1],
+    vertexPosArray[vertexIndex * 3 + 2],
+  ];
+
+  for (let i = 0; i < nTriangles; i++) {
+    const ai = triangleIndicesArray[i * 3 + 0] * 3;
+    const bi = triangleIndicesArray[i * 3 + 1] * 3;
+    const ci = triangleIndicesArray[i * 3 + 2] * 3;
+
+    // check to make sure not to test triangles that the vertex is part of
+    // this is because it will always think it is intersecting with these triangles
+    if (i == ai || i == bi || i == ci) continue;
+
+    const a = [
+      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 0],
+      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 1],
+      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 2],
+    ];
+    const b = [
+      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 0],
+      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 1],
+      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 2],
+    ];
+    const c = [
+      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 0],
+      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 1],
+      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 2],
+    ];
+
+    const n = [
+      surfaceNormalsArray[i * 3 + 0],
+      surfaceNormalsArray[i * 3 + 1],
+      surfaceNormalsArray[i * 3 + 2],
+    ];
+
+    if (rayTriangleIntersection(p0, lightPos, a, b, c, n)) {
+      return true;
+    }
+  }
+  return false;
 };

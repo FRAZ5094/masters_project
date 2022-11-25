@@ -1,0 +1,1 @@
+cat *.ts functions/*/*.ts | wc -l

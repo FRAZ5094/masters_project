@@ -2,14 +2,15 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { rayTriangleIntersection } from "./functions/intersections/intersections";
 import { GUI } from "dat.gui";
+import { cross } from "./functions/vector/vector";
 
 let arrow: THREE.ArrowHelper;
 const intersectedTriangles: THREE.Mesh[] = [];
 
 const d = 1;
-const n = 4;
+const n = 10;
 
-const p0 = new THREE.Vector3(0, 0, 1);
+const p0 = new THREE.Vector3(0, 0, 2);
 const p1 = new THREE.Vector3(0, 0, 0);
 
 const gui = new GUI();
@@ -29,10 +30,11 @@ const camera = new THREE.PerspectiveCamera(
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
+// const geometry = new THREE.SphereGeometry(d, n, n);
 const geometry = new THREE.PlaneGeometry(d, d, n, n);
 
 const material = new THREE.MeshBasicMaterial({
-  color: 0x00ff00,
+  color: 0xff0000,
   side: THREE.DoubleSide,
   wireframe: true,
 });
@@ -85,7 +87,22 @@ const checkIntersections = () => {
       vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 2],
     ];
 
-    const n = [0, 0, 1];
+    // const n = [0,0,1];
+
+    const n = cross(
+      a[0] - b[0],
+      a[1] - b[1],
+      a[2] - b[2],
+      a[0] - c[0],
+      a[1] - c[1],
+      a[2] - c[2]
+    );
+
+    const mag = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+
+    n[0] /= mag;
+    n[1] /= mag;
+    n[2] /= mag;
 
     if (
       rayTriangleIntersection(
@@ -109,7 +126,7 @@ const checkIntersections = () => {
 
       const triangle = new THREE.Mesh(
         geo,
-        new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
+        new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide })
       );
 
       intersectedTriangles.push(triangle);

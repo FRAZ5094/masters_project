@@ -3,22 +3,48 @@ import {
   calculateSpringForce,
   calculateSpringForceVector,
 } from "./functions/forces/forces";
+import { isVertexSelfShadowed } from "./functions/intersections/intersections";
+import { calculateSurfaceNormals } from "./functions/vertexNormals/vertexNormals";
 
-const fn1 = calculateSpringForce;
+const fn1 = isVertexSelfShadowed;
 const fn2 = calculateSpringForceVector;
 
 console.log("starting benchmark");
 
-const n = 1000000000;
+const n = 10000;
 
 let i = 0;
+const vertexI = 0;
+
+const lightPos = [0, 0, 1];
+
+const geometry = new THREE.PlaneGeometry(1, 1, 100, 100);
+
+const vertexPosArray = geometry.attributes.position.array as Float32Array;
+
+const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
+
+const surfaceNormalsArray = calculateSurfaceNormals(
+  vertexPosArray,
+  triangleIndicesArray
+);
 
 let start = performance.now();
 
+let r;
+
 while (i < n) {
-  const r = fn1(1, 1, 1, 2, 2, 2, 1, 1);
+  r = fn1(
+    vertexI,
+    lightPos,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
+  );
   i++;
 }
+
+console.log(r);
 
 let end = performance.now();
 
