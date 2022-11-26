@@ -20,16 +20,16 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 2000;
+const nTimestep: number = 200;
 const d = 1;
-const AM_ratio = 0.1;
-const nWidthSegments = 10;
+const AM_ratio = 1;
+const nWidthSegments = 20;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
 const k = 1;
 const dampingRatio = 0.1;
-const dt = 0.01;
+const dt = 0.05;
 let showSurfaceNormals = false;
 let showVertexNormals = true;
 
@@ -98,7 +98,7 @@ const updateModel = (): void => {
 
     surfaceNormalArrows = [];
 
-    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndices);
+    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
 
     for (let i = 0; i < nFaces; i++) {
       const stride = i * 3;
@@ -109,17 +109,17 @@ const updateModel = (): void => {
 
       const n = new THREE.Vector3(nx, ny, nz);
 
-      const ax = p_t[triangleIndices[stride + 0] * 3 + 0];
-      const ay = p_t[triangleIndices[stride + 0] * 3 + 1];
-      const az = p_t[triangleIndices[stride + 0] * 3 + 2];
+      const ax = p_t[triangleIndicesArray[stride + 0] * 3 + 0];
+      const ay = p_t[triangleIndicesArray[stride + 0] * 3 + 1];
+      const az = p_t[triangleIndicesArray[stride + 0] * 3 + 2];
 
-      const bx = p_t[triangleIndices[stride + 1] * 3 + 0];
-      const by = p_t[triangleIndices[stride + 1] * 3 + 1];
-      const bz = p_t[triangleIndices[stride + 1] * 3 + 2];
+      const bx = p_t[triangleIndicesArray[stride + 1] * 3 + 0];
+      const by = p_t[triangleIndicesArray[stride + 1] * 3 + 1];
+      const bz = p_t[triangleIndicesArray[stride + 1] * 3 + 2];
 
-      const cx = p_t[triangleIndices[stride + 2] * 3 + 0];
-      const cy = p_t[triangleIndices[stride + 2] * 3 + 1];
-      const cz = p_t[triangleIndices[stride + 2] * 3 + 2];
+      const cx = p_t[triangleIndicesArray[stride + 2] * 3 + 0];
+      const cy = p_t[triangleIndicesArray[stride + 2] * 3 + 1];
+      const cz = p_t[triangleIndicesArray[stride + 2] * 3 + 2];
 
       const [ox, oy, oz] = calculateCentroidOfTriangle(
         ax,
@@ -238,19 +238,17 @@ console.log("Number of springs: " + springCount);
 
 timestepSliderElement.max = (nTimestep - 1).toString();
 
-var startTime = performance.now();
-
 const mass = (d * d) / AM_ratio;
 
-const triangleIndices = geometry.getIndex()!.array as Uint16Array;
+const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
 
 const trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
-  triangleIndices,
+  triangleIndicesArray,
   nRows,
   nCols
 );
 
-const nFaces = triangleIndices.length / 3;
+const nFaces = triangleIndicesArray.length / 3;
 
 const p = runSim(
   vertexPosArray,
@@ -261,12 +259,11 @@ const p = runSim(
   nTimestep,
   dt,
   integrator,
-  trianglesAttachedToVertexArray
+  trianglesAttachedToVertexArray,
+  triangleIndicesArray
 );
 
-var endTime = performance.now();
-
-console.log(`Set up and simulation took ${endTime - startTime} milliseconds`);
+// console.log(`Set up and simulation took ${endTime - startTime} milliseconds`);
 
 const plane = new THREE.Mesh(
   geometry,
@@ -284,10 +281,9 @@ scene.add(axesHelper);
 let surfaceNormalArrows: THREE.ArrowHelper[] = [];
 let vertexNormalArrows: THREE.ArrowHelper[] = [];
 
-playButton.click();
+// playButton.click();
 
 const animate = async (time: number) => {
-  //remove all the arrow helpers from the previous frame
   renderer.render(scene, camera);
 };
 renderer.setAnimationLoop(animate);
@@ -297,3 +293,21 @@ renderer.setAnimationLoop(animate);
 //   camera.updateProjectionMatrix();
 //   renderer.setSize(window.innerWidth, window.innerHeight);
 // });
+
+document.addEventListener("keydown", (e: KeyboardEvent) => {
+  const key = e.key;
+
+  // console.log(key);
+
+  if (key == "ArrowRight" && t < nTimestep) {
+    if (playing) playButton.click();
+    t += 1;
+    updateModel();
+  } else if (key == "ArrowLeft" && t > 0) {
+    if (playing) playButton.click();
+    t -= 1;
+    updateModel();
+  } else if (key == " ") {
+    playButton.click();
+  }
+});

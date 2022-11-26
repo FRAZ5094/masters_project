@@ -8,7 +8,7 @@ let arrow: THREE.ArrowHelper;
 const intersectedTriangles: THREE.Mesh[] = [];
 
 const d = 1;
-const n = 10;
+const n = 3;
 
 const p0 = new THREE.Vector3(0, 0, 2);
 const p1 = new THREE.Vector3(0, 0, 0);

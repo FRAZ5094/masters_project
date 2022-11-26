@@ -2,13 +2,17 @@ import {
   calculateDampingForce,
   calculateSpringForce,
 } from "./functions/forces/forces";
-import { calculateVertexNormals } from "./functions/vertexNormals/vertexNormals";
+import {
+  calculateSurfaceNormals,
+  calculateVertexNormals,
+} from "./functions/vertexNormals/vertexNormals";
 import { dot } from "./functions/vector/vector";
+import { isVertexSelfShadowed } from "./functions/intersections/intersections";
 
 export type integrators = "euler" | "rk4";
 
 export const runSim = (
-  verticesPosArray: Float32Array,
+  initialVertexPosArray: Float32Array,
   mass: number,
   k: number,
   dampingRatio: number,
@@ -16,7 +20,8 @@ export const runSim = (
   nTimestep: number,
   dt: number,
   integratorName: integrators,
-  trianglesAttachedToVertexArray: number[][]
+  trianglesAttachedToVertexArray: number[][],
+  triangleIndicesArray: Uint16Array
 ): Float32Array => {
   console.log("starting simulation");
 
@@ -26,7 +31,7 @@ export const runSim = (
   else if (integratorName == "rk4") integrator = rk4;
   else integrator = euler;
 
-  const nVertices = verticesPosArray.length / 3;
+  const nVertices = initialVertexPosArray.length / 3;
 
   //this is the mass of a single particle
   const massP = mass / nVertices;
@@ -36,11 +41,11 @@ export const runSim = (
       (Float32Array.BYTES_PER_ELEMENT * nTimestep * nVertices * 3) / 1000000 +
       "mb"
   );
-  console.log(
-    "v will be " +
-      (Float32Array.BYTES_PER_ELEMENT * nVertices * 3) / 1000000 +
-      "mb"
-  );
+  // console.log(
+  //   "v will be " +
+  //     (Float32Array.BYTES_PER_ELEMENT * nVertices * 3) / 1000000 +
+  //     "mb"
+  // );
 
   console.log("Initializing memory");
 
@@ -51,9 +56,9 @@ export const runSim = (
 
   for (let i = 0; i < nVertices; i++) {
     let stride = i * 3;
-    p[stride + 0] = verticesPosArray[stride + 0];
-    p[stride + 1] = verticesPosArray[stride + 1];
-    p[stride + 2] = verticesPosArray[stride + 2];
+    p[stride + 0] = initialVertexPosArray[stride + 0];
+    p[stride + 1] = initialVertexPosArray[stride + 1];
+    p[stride + 2] = initialVertexPosArray[stride + 2];
   }
 
   console.timeEnd();
@@ -64,11 +69,34 @@ export const runSim = (
   console.log("Starting simulation loop");
   console.time();
 
+  const simLoopStartTime = performance.now();
+
   // loop over time steps
   for (let t = 1; t < nTimestep; t++) {
+    if (t % (nTimestep / 100) == 0) {
+      const timeElapsed = performance.now() - simLoopStartTime;
+
+      const esimatedTotalSimTime: number =
+        ((performance.now() - simLoopStartTime) / t) * nTimestep;
+      console.log(
+        "Simulation progress: " +
+          Math.floor((t / nTimestep) * 100) +
+          "% " +
+          Math.floor((esimatedTotalSimTime - timeElapsed) / 1000) +
+          " seconds left"
+      );
+    }
+
+    const vertexPosArray = p.slice(nVertices * 3 * (t - 1), nVertices * 3 * t);
+
     const vertexNormals = calculateVertexNormals(
       trianglesAttachedToVertexArray,
-      verticesPosArray
+      vertexPosArray
+    );
+
+    const surfaceNormalsArray = calculateSurfaceNormals(
+      vertexPosArray,
+      triangleIndicesArray
     );
 
     for (let i = 0; i < nVertices; i++) {
@@ -109,7 +137,11 @@ export const runSim = (
         p,
         nx,
         ny,
-        nz
+        nz,
+        i,
+        vertexPosArray,
+        triangleIndicesArray,
+        surfaceNormalsArray
       );
 
       v[vStride + 0] = vx_new;
@@ -143,17 +175,21 @@ export const f = (
   mass: number,
   nx: number,
   ny: number,
-  nz: number
+  nz: number,
+  vertexIndex: number,
+  vertexPosArray: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  surfaceNormalsArray: Float32Array
 ): number[] => {
   let fx = 0;
   let fy = 0;
   let fz = 0;
 
   const light = {
-    x: 0.5,
-    y: 0.5,
+    x: 0,
+    y: 0,
     z: 2,
-    r: 0.5,
+    r: 1,
     dirx: 0,
     diry: 0,
     dirz: -1,
@@ -163,8 +199,8 @@ export const f = (
   const nSprings = springArray.length;
 
   //for each spring attached to the vertex
-  for (let j = 0; j < nSprings; j++) {
-    let springData = springArray[j];
+  for (let i = 0; i < nSprings; i++) {
+    let springData = springArray[i];
     let otherIndex = springData[0];
     let springL = springData[1];
 
@@ -203,16 +239,25 @@ export const f = (
 
   //finding out if the vertex is in the light
 
-  const dxl = x - light.x;
-  const dyl = y - light.y;
+  if (
+    !isVertexSelfShadowed(
+      vertexIndex,
+      [light.x, light.y, light.z],
+      vertexPosArray,
+      triangleIndicesArray,
+      surfaceNormalsArray
+    )
+  ) {
+    const dxl = x - light.x;
+    const dyl = y - light.y;
 
-  const scale = dot(light.dirx, light.diry, light.dirz, nx, ny, nz);
-  // const scale = 1;
+    const scale = Math.abs(dot(light.dirx, light.diry, light.dirz, nx, ny, nz));
 
-  if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
-    fx -= light.mag * scale * light.dirx;
-    fy -= light.mag * scale * light.diry;
-    fz -= light.mag * scale * light.dirz;
+    if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+      fx += light.mag * scale * light.dirx;
+      fy += light.mag * scale * light.diry;
+      fz += light.mag * scale * light.dirz;
+    }
   }
 
   const ax = fx / mass;
@@ -239,7 +284,11 @@ export const euler = (
   p: Float32Array,
   nx: number,
   ny: number,
-  nz: number
+  nz: number,
+  vertexIndex: number,
+  vertexPosArray: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  surfaceNormalsArray: Float32Array
 ): number[] => {
   const [ax, ay, az] = f(
     x,
@@ -257,7 +306,11 @@ export const euler = (
     massP,
     nx,
     ny,
-    nz
+    nz,
+    vertexIndex,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
   );
 
   let vx_new = vx + ax * dt;
@@ -288,7 +341,11 @@ export const rk4 = (
   p: Float32Array,
   nx: number,
   ny: number,
-  nz: number
+  nz: number,
+  vertexIndex: number,
+  vertexPosArray: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  surfaceNormalsArray: Float32Array
 ): number[] => {
   const [k1vx, k1vy, k1vz] = f(
     x,
@@ -306,7 +363,11 @@ export const rk4 = (
     massP,
     nx,
     ny,
-    nz
+    nz,
+    vertexIndex,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
   );
 
   const k1x = vx;
@@ -329,7 +390,11 @@ export const rk4 = (
     massP,
     nx,
     ny,
-    nz
+    nz,
+    vertexIndex,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
   );
 
   const k2x = vx + dt * (k1vx / 2);
@@ -352,7 +417,11 @@ export const rk4 = (
     massP,
     nx,
     ny,
-    nz
+    nz,
+    vertexIndex,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
   );
 
   const k3x = vx + dt * (k2vx / 2);
@@ -375,7 +444,11 @@ export const rk4 = (
     massP,
     nx,
     ny,
-    nz
+    nz,
+    vertexIndex,
+    vertexPosArray,
+    triangleIndicesArray,
+    surfaceNormalsArray
   );
 
   const k4x = vx + dt * k3vx;

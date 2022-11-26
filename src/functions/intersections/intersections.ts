@@ -110,28 +110,28 @@ export const isVertexSelfShadowed = (
   ];
 
   for (let i = 0; i < nTriangles; i++) {
-    const ai = triangleIndicesArray[i * 3 + 0] * 3;
-    const bi = triangleIndicesArray[i * 3 + 1] * 3;
-    const ci = triangleIndicesArray[i * 3 + 2] * 3;
+    const ai = triangleIndicesArray[i * 3 + 0];
+    const bi = triangleIndicesArray[i * 3 + 1];
+    const ci = triangleIndicesArray[i * 3 + 2];
 
     // check to make sure not to test triangles that the vertex is part of
     // this is because it will always think it is intersecting with these triangles
-    if (i == ai || i == bi || i == ci) continue;
+    if (vertexIndex == ai || vertexIndex == bi || vertexIndex == ci) continue;
 
     const a = [
-      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 0],
-      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 1],
-      vertexPosArray[triangleIndicesArray[i * 3 + 0] * 3 + 2],
+      vertexPosArray[ai * 3 + 0],
+      vertexPosArray[ai * 3 + 1],
+      vertexPosArray[ai * 3 + 2],
     ];
     const b = [
-      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 0],
-      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 1],
-      vertexPosArray[triangleIndicesArray[i * 3 + 1] * 3 + 2],
+      vertexPosArray[bi * 3 + 0],
+      vertexPosArray[bi * 3 + 1],
+      vertexPosArray[bi * 3 + 2],
     ];
     const c = [
-      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 0],
-      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 1],
-      vertexPosArray[triangleIndicesArray[i * 3 + 2] * 3 + 2],
+      vertexPosArray[ci * 3 + 0],
+      vertexPosArray[ci * 3 + 1],
+      vertexPosArray[ci * 3 + 2],
     ];
 
     const n = [
