@@ -5,6 +5,7 @@ This is my masters project at Glasgow University exploring Soft Body Modelling f
 
 ### Prerequisites
 
+* node
 * npm
 
 ### Installation
