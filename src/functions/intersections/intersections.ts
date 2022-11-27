@@ -1,5 +1,4 @@
-import { dot, cross } from "../vector/vector";
-import { getTrianglesAttachedToVertexArray } from "../vertexNormals/vertexNormals";
+import { dot } from "../vector/vector";
 
 export const rayTriangleIntersection = (
   p0: number[],

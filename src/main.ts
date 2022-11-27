@@ -20,18 +20,18 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 200;
+const nTimestep: number = 600;
 const d = 1;
 const AM_ratio = 1;
 const nWidthSegments = 20;
 const nHeightSegments = nWidthSegments;
 const nCols = nWidthSegments + 1;
 const nRows = nHeightSegments + 1;
-const k = 1;
+const k = 0.1;
 const dampingRatio = 0.1;
 const dt = 0.05;
 let showSurfaceNormals = false;
-let showVertexNormals = true;
+let showVertexNormals = false;
 
 const integrator: integrators = "rk4";
 
@@ -181,6 +181,7 @@ const updateModel = (): void => {
   }
 };
 
+// @ts-ignore
 var intervalId = window.setInterval(function () {
   if (playing) {
     if (t + speed < nTimestep) {
@@ -211,7 +212,8 @@ const camera = new THREE.PerspectiveCamera(
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-camera.position.set(1, 0.5, 2).setLength(1);
+// camera.position.set(1, 0.5, 2).setLength(1);
+camera.position.set(0, 0, 1).setLength(1);
 controls.update();
 
 const geometry = new THREE.PlaneGeometry(d, d, nWidthSegments, nHeightSegments);
@@ -283,7 +285,7 @@ let vertexNormalArrows: THREE.ArrowHelper[] = [];
 
 // playButton.click();
 
-const animate = async (time: number) => {
+const animate = async () => {
   renderer.render(scene, camera);
 };
 renderer.setAnimationLoop(animate);

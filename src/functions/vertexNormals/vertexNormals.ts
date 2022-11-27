@@ -1,7 +1,3 @@
-import {
-  IndexToRowAndCol,
-  RowAndColToIndex,
-} from "../IndexRowsCols/IndexRowsCols";
 import { cross } from "../vector/vector";
 
 export const getNumberOfFaces = (nRows: number, nCols: number): number => {

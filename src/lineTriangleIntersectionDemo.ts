@@ -147,7 +147,7 @@ gui.add(p1, "y", -0.5, 0.5).name("p1.y").onChange(onLineChange);
 
 onLineChange();
 
-const animate = async (time: number) => {
+const animate = async () => {
   //remove all the arrow helpers from the previous frame
   renderer.render(scene, camera);
 };

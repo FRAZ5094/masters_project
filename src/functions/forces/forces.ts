@@ -52,6 +52,7 @@ export const calculateSpringForceVector = (
 ): THREE.Vector3 => {
   let dist = position1.sub(position2);
 
+  //@ts-ignore
   const extension: number = dist.length() - natural_length;
 
   const f = dist.multiplyScalar(-k);

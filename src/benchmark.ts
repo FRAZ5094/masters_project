@@ -1,8 +1,5 @@
 import * as THREE from "three";
-import {
-  calculateSpringForce,
-  calculateSpringForceVector,
-} from "./functions/forces/forces";
+import { calculateSpringForceVector } from "./functions/forces/forces";
 import { isVertexSelfShadowed } from "./functions/intersections/intersections";
 import { calculateSurfaceNormals } from "./functions/vertexNormals/vertexNormals";
 
@@ -59,6 +56,7 @@ const b = new THREE.Vector3(2, 2, 2);
 
 start = performance.now();
 while (i < n) {
+  // @ts-ignore
   const r = fn2(a, b, 1, 1);
   i++;
 }

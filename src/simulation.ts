@@ -8,6 +8,7 @@ import {
 } from "./functions/vertexNormals/vertexNormals";
 import { dot } from "./functions/vector/vector";
 import { isVertexSelfShadowed } from "./functions/intersections/intersections";
+import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
 
@@ -76,13 +77,13 @@ export const runSim = (
     if (t % (nTimestep / 100) == 0) {
       const timeElapsed = performance.now() - simLoopStartTime;
 
-      const esimatedTotalSimTime: number =
+      const estimatedTotalSimTime: number =
         ((performance.now() - simLoopStartTime) / t) * nTimestep;
       console.log(
         "Simulation progress: " +
-          Math.floor((t / nTimestep) * 100) +
+          round((t / nTimestep) * 100, 0) +
           "% " +
-          Math.floor((esimatedTotalSimTime - timeElapsed) / 1000) +
+          round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
           " seconds left"
       );
     }
@@ -188,12 +189,12 @@ export const f = (
   const light = {
     x: 0,
     y: 0,
-    z: 2,
+    z: 1,
     r: 1,
     dirx: 0,
     diry: 0,
     dirz: -1,
-    mag: 0.01,
+    mag: 2 / nVertices,
   };
 
   const nSprings = springArray.length;
@@ -236,6 +237,12 @@ export const f = (
   fx += fDamperX;
   fy += fDamperY;
   fz += fDamperZ;
+
+  if (vertexIndex == nVertices - 1) {
+    fy += 0.5;
+    fx += -0.5;
+    fz += 0.5;
+  }
 
   //finding out if the vertex is in the light
 

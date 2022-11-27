@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { RowAndColToIndex } from "../IndexRowsCols/IndexRowsCols";
 import {
   calculateCentroidOfTriangle,
   calculateSurfaceNormals,
@@ -126,7 +125,7 @@ describe("calculateVertexNormals", () => {
       nCols
     );
 
-    let ans = new Float32Array(nCols * nRows * 3).map((value, i) =>
+    let ans = new Float32Array(nCols * nRows * 3).map((_, i) =>
       i % 3 == 2 ? 1 : 0
     );
 

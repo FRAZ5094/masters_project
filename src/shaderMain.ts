@@ -1,12 +1,5 @@
 import * as THREE from "three";
-import { GridHelper } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import {
-  calculateSpringForce,
-  findIndicesOfSpringAttachmentPoints,
-  getPositionVectorOfVertexAtIndex,
-} from "./functions/forces/forces";
-import { Spring } from "./Spring";
 import Stats from "stats.js";
 
 // @ts-ignore
@@ -61,7 +54,7 @@ const plane = new THREE.Mesh(
 
 scene.add(plane);
 
-const animate = async (time: number) => {
+const animate = async () => {
   stats.begin();
   renderer.render(scene, camera);
 
