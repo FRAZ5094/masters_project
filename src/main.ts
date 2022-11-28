@@ -13,6 +13,10 @@ import {
   calculateVertexNormals,
   getTrianglesAttachedToVertexArray,
 } from "./functions/vertexNormals/vertexNormals";
+import {
+  handleAccelerationArrows,
+  handleVelocityArrows,
+} from "./functions/arrows/arrows";
 
 console.log("ran main.ts");
 
@@ -20,7 +24,7 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 600;
+const nTimestep: number = 200;
 const d = 1;
 const AM_ratio = 1;
 const nWidthSegments = 20;
@@ -30,10 +34,16 @@ const nRows = nHeightSegments + 1;
 const k = 0.1;
 const dampingRatio = 0.1;
 const dt = 0.05;
-let showSurfaceNormals = false;
-let showVertexNormals = false;
-
 const integrator: integrators = "rk4";
+
+let showSurfaceNormals = false;
+let surfaceNormalArrows: THREE.ArrowHelper[] = [];
+let showVertexNormals = false;
+let vertexNormalArrows: THREE.ArrowHelper[] = [];
+let showAccelerationArrows = false;
+let accelerationArrows: THREE.ArrowHelper[] = [];
+let showVelocityArrows = true;
+let velocityArrows: THREE.ArrowHelper[] = [];
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -84,12 +94,43 @@ playbackSpeedDropdown.onchange = (e) => {
 };
 
 const updateModel = (): void => {
-  const p_t = p.slice(t * vertices.count * 3, (t + 1) * vertices.count * 3);
+  const pt = p.slice(t * vertices.count * 3, (t + 1) * vertices.count * 3);
 
-  const pBuffer = new THREE.BufferAttribute(p_t, 3);
+  const pBuffer = new THREE.BufferAttribute(pt, 3);
 
   geometry.setAttribute("position", pBuffer);
-  geometry.computeVertexNormals();
+
+  if (showAccelerationArrows) {
+    //prettier-ignore
+    const pt_minus1 = p.slice((t - 1) * vertices.count * 3,t * vertices.count * 3);
+    //prettier-ignore
+    const pt_plus1 = p.slice((t + 1) * vertices.count * 3,(t + 2) * vertices.count * 3);
+
+    accelerationArrows = handleAccelerationArrows(
+      accelerationArrows,
+      pt_minus1,
+      pt,
+      pt_plus1,
+      dt,
+      scene,
+      0.1
+    );
+  }
+
+  if (showVelocityArrows) {
+    const pt_minus1 = p.slice(
+      (t - 1) * vertices.count * 3,
+      t * vertices.count * 3
+    );
+    velocityArrows = handleVelocityArrows(
+      velocityArrows,
+      pt_minus1,
+      pt,
+      dt,
+      scene,
+      0.1
+    );
+  }
 
   if (showSurfaceNormals) {
     surfaceNormalArrows.forEach((arrow) => {
@@ -98,7 +139,7 @@ const updateModel = (): void => {
 
     surfaceNormalArrows = [];
 
-    const surfaceNormals = calculateSurfaceNormals(p_t, triangleIndicesArray);
+    const surfaceNormals = calculateSurfaceNormals(pt, triangleIndicesArray);
 
     for (let i = 0; i < nFaces; i++) {
       const stride = i * 3;
@@ -109,17 +150,17 @@ const updateModel = (): void => {
 
       const n = new THREE.Vector3(nx, ny, nz);
 
-      const ax = p_t[triangleIndicesArray[stride + 0] * 3 + 0];
-      const ay = p_t[triangleIndicesArray[stride + 0] * 3 + 1];
-      const az = p_t[triangleIndicesArray[stride + 0] * 3 + 2];
+      const ax = pt[triangleIndicesArray[stride + 0] * 3 + 0];
+      const ay = pt[triangleIndicesArray[stride + 0] * 3 + 1];
+      const az = pt[triangleIndicesArray[stride + 0] * 3 + 2];
 
-      const bx = p_t[triangleIndicesArray[stride + 1] * 3 + 0];
-      const by = p_t[triangleIndicesArray[stride + 1] * 3 + 1];
-      const bz = p_t[triangleIndicesArray[stride + 1] * 3 + 2];
+      const bx = pt[triangleIndicesArray[stride + 1] * 3 + 0];
+      const by = pt[triangleIndicesArray[stride + 1] * 3 + 1];
+      const bz = pt[triangleIndicesArray[stride + 1] * 3 + 2];
 
-      const cx = p_t[triangleIndicesArray[stride + 2] * 3 + 0];
-      const cy = p_t[triangleIndicesArray[stride + 2] * 3 + 1];
-      const cz = p_t[triangleIndicesArray[stride + 2] * 3 + 2];
+      const cx = pt[triangleIndicesArray[stride + 2] * 3 + 0];
+      const cy = pt[triangleIndicesArray[stride + 2] * 3 + 1];
+      const cz = pt[triangleIndicesArray[stride + 2] * 3 + 2];
 
       const [ox, oy, oz] = calculateCentroidOfTriangle(
         ax,
@@ -152,7 +193,7 @@ const updateModel = (): void => {
 
     const vertexNormals = calculateVertexNormals(
       trianglesAttachedToVertexArray,
-      p_t
+      pt
     );
 
     const nVertices = nRows * nCols;
@@ -167,9 +208,9 @@ const updateModel = (): void => {
       );
 
       const origin = new THREE.Vector3(
-        p_t[stride + 0],
-        p_t[stride + 1],
-        p_t[stride + 2]
+        pt[stride + 0],
+        pt[stride + 1],
+        pt[stride + 2]
       );
 
       const arrow = new THREE.ArrowHelper(dir, origin, 0.05);
@@ -279,9 +320,6 @@ scene.add(plane);
 const axesHelper = new THREE.AxesHelper();
 
 scene.add(axesHelper);
-
-let surfaceNormalArrows: THREE.ArrowHelper[] = [];
-let vertexNormalArrows: THREE.ArrowHelper[] = [];
 
 // playButton.click();
 

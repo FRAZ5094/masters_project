@@ -190,11 +190,11 @@ export const f = (
     x: 0,
     y: 0,
     z: 1,
-    r: 1,
+    r: 0.25,
     dirx: 0,
     diry: 0,
     dirz: -1,
-    mag: 2 / nVertices,
+    mag: 10 / nVertices,
   };
 
   const nSprings = springArray.length;
@@ -238,11 +238,11 @@ export const f = (
   fy += fDamperY;
   fz += fDamperZ;
 
-  if (vertexIndex == nVertices - 1) {
-    fy += 0.5;
-    fx += -0.5;
-    fz += 0.5;
-  }
+  // if (vertexIndex == nVertices - 1) {
+  //   fy += 0.5;
+  //   fx += -0.5;
+  //   fz += 0.5;
+  // }
 
   //finding out if the vertex is in the light
 
