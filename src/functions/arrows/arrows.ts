@@ -1,4 +1,9 @@
 import * as THREE from "three";
+import {
+  calculateSurfaceNormals,
+  calculateCentroidOfTriangle,
+  calculateVertexNormals,
+} from "../vertexNormals/vertexNormals";
 
 export const calculateV = (
   pt: Float32Array,
@@ -131,7 +136,79 @@ export const handleVelocityArrows = (
 };
 
 export const handleSurfaceNormalArrows = (
-  surfaceNormalArrows: THREE.ArrowHelper[]
+  surfaceNormalArrows: THREE.ArrowHelper[],
+  pt: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  scene: THREE.Scene,
+  maxArrowLength: number
 ): THREE.ArrowHelper[] => {
+  const surfaceNormals = calculateSurfaceNormals(pt, triangleIndicesArray);
+
+  const nFaces = triangleIndicesArray.length / 3;
+  const arrowPositions = new Float32Array(nFaces * 3);
+
+  for (let i = 0; i < nFaces; i++) {
+    const stride = i * 3;
+
+    const ax = pt[triangleIndicesArray[stride + 0] * 3 + 0];
+    const ay = pt[triangleIndicesArray[stride + 0] * 3 + 1];
+    const az = pt[triangleIndicesArray[stride + 0] * 3 + 2];
+
+    const bx = pt[triangleIndicesArray[stride + 1] * 3 + 0];
+    const by = pt[triangleIndicesArray[stride + 1] * 3 + 1];
+    const bz = pt[triangleIndicesArray[stride + 1] * 3 + 2];
+
+    const cx = pt[triangleIndicesArray[stride + 2] * 3 + 0];
+    const cy = pt[triangleIndicesArray[stride + 2] * 3 + 1];
+    const cz = pt[triangleIndicesArray[stride + 2] * 3 + 2];
+
+    const [ox, oy, oz] = calculateCentroidOfTriangle(
+      ax,
+      ay,
+      az,
+      bx,
+      by,
+      bz,
+      cx,
+      cy,
+      cz
+    );
+
+    arrowPositions[stride + 0] = ox;
+    arrowPositions[stride + 1] = oy;
+    arrowPositions[stride + 2] = oz;
+  }
+
+  surfaceNormalArrows = handleArrows(
+    surfaceNormalArrows,
+    arrowPositions,
+    surfaceNormals,
+    maxArrowLength,
+    scene
+  );
+
   return surfaceNormalArrows;
+};
+
+export const handleVertexNormalArrows = (
+  vertexNormalArrows: THREE.ArrowHelper[],
+  pt: Float32Array,
+  trianglesAttachedToVertexArray: number[][],
+  scene: THREE.Scene,
+  maxArrowLength: number
+): THREE.ArrowHelper[] => {
+  const vertexNormals = calculateVertexNormals(
+    trianglesAttachedToVertexArray,
+    pt
+  );
+
+  vertexNormalArrows = handleArrows(
+    vertexNormalArrows,
+    pt,
+    vertexNormals,
+    maxArrowLength,
+    scene
+  );
+
+  return vertexNormalArrows;
 };

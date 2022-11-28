@@ -8,14 +8,14 @@ import vertexShader from "./shaders/vertex.glsl";
 // @ts-ignore
 import fragmentShader from "./shaders/fragment.glsl";
 import {
-  calculateCentroidOfTriangle,
-  calculateSurfaceNormals,
   calculateVertexNormals,
   getTrianglesAttachedToVertexArray,
 } from "./functions/vertexNormals/vertexNormals";
 import {
   handleAccelerationArrows,
+  handleSurfaceNormalArrows,
   handleVelocityArrows,
+  handleVertexNormalArrows,
 } from "./functions/arrows/arrows";
 
 console.log("ran main.ts");
@@ -24,7 +24,7 @@ let t = 0;
 let speed = 1;
 let playing = false;
 
-const nTimestep: number = 200;
+const nTimestep: number = 20;
 const d = 1;
 const AM_ratio = 1;
 const nWidthSegments = 20;
@@ -38,12 +38,13 @@ const integrator: integrators = "rk4";
 
 let showSurfaceNormals = false;
 let surfaceNormalArrows: THREE.ArrowHelper[] = [];
-let showVertexNormals = false;
+let showVertexNormals = true;
 let vertexNormalArrows: THREE.ArrowHelper[] = [];
 let showAccelerationArrows = false;
 let accelerationArrows: THREE.ArrowHelper[] = [];
-let showVelocityArrows = true;
+let showVelocityArrows = false;
 let velocityArrows: THREE.ArrowHelper[] = [];
+let maxArrowLength: number = 0.1;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
@@ -113,7 +114,7 @@ const updateModel = (): void => {
       pt_plus1,
       dt,
       scene,
-      0.1
+      maxArrowLength
     );
   }
 
@@ -128,97 +129,28 @@ const updateModel = (): void => {
       pt,
       dt,
       scene,
-      0.1
+      maxArrowLength
     );
   }
 
   if (showSurfaceNormals) {
-    surfaceNormalArrows.forEach((arrow) => {
-      scene.remove(arrow);
-    });
-
-    surfaceNormalArrows = [];
-
-    const surfaceNormals = calculateSurfaceNormals(pt, triangleIndicesArray);
-
-    for (let i = 0; i < nFaces; i++) {
-      const stride = i * 3;
-
-      const nx = surfaceNormals[stride + 0];
-      const ny = surfaceNormals[stride + 1];
-      const nz = surfaceNormals[stride + 2];
-
-      const n = new THREE.Vector3(nx, ny, nz);
-
-      const ax = pt[triangleIndicesArray[stride + 0] * 3 + 0];
-      const ay = pt[triangleIndicesArray[stride + 0] * 3 + 1];
-      const az = pt[triangleIndicesArray[stride + 0] * 3 + 2];
-
-      const bx = pt[triangleIndicesArray[stride + 1] * 3 + 0];
-      const by = pt[triangleIndicesArray[stride + 1] * 3 + 1];
-      const bz = pt[triangleIndicesArray[stride + 1] * 3 + 2];
-
-      const cx = pt[triangleIndicesArray[stride + 2] * 3 + 0];
-      const cy = pt[triangleIndicesArray[stride + 2] * 3 + 1];
-      const cz = pt[triangleIndicesArray[stride + 2] * 3 + 2];
-
-      const [ox, oy, oz] = calculateCentroidOfTriangle(
-        ax,
-        ay,
-        az,
-        bx,
-        by,
-        bz,
-        cx,
-        cy,
-        cz
-      );
-
-      const o = new THREE.Vector3(ox, oy, oz);
-
-      const arrow = new THREE.ArrowHelper(n, o, 0.05);
-
-      scene.add(arrow);
-
-      surfaceNormalArrows.push(arrow);
-    }
+    handleSurfaceNormalArrows(
+      surfaceNormalArrows,
+      pt,
+      triangleIndicesArray,
+      scene,
+      maxArrowLength
+    );
   }
 
   if (showVertexNormals) {
-    vertexNormalArrows.forEach((arrow) => {
-      scene.remove(arrow);
-    });
-
-    vertexNormalArrows = [];
-
-    const vertexNormals = calculateVertexNormals(
+    vertexNormalArrows = handleVertexNormalArrows(
+      vertexNormalArrows,
+      pt,
       trianglesAttachedToVertexArray,
-      pt
+      scene,
+      maxArrowLength
     );
-
-    const nVertices = nRows * nCols;
-
-    for (let i = 0; i < nVertices; i++) {
-      const stride = i * 3;
-
-      const dir = new THREE.Vector3(
-        vertexNormals[stride + 0],
-        vertexNormals[stride + 1],
-        vertexNormals[stride + 2]
-      );
-
-      const origin = new THREE.Vector3(
-        pt[stride + 0],
-        pt[stride + 1],
-        pt[stride + 2]
-      );
-
-      const arrow = new THREE.ArrowHelper(dir, origin, 0.05);
-
-      scene.add(arrow);
-
-      vertexNormalArrows.push(arrow);
-    }
   }
 };
 
@@ -237,11 +169,6 @@ const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
 var renderer = new THREE.WebGLRenderer({ canvas });
 renderer.setSize(window.innerWidth, window.innerHeight * 0.9);
-// document.body.appendChild( renderer.domElement );
-
-// const stats = new Stats();
-// stats.showPanel(0);
-// document.body.appendChild(stats.dom);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -290,8 +217,6 @@ const trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
   nRows,
   nCols
 );
-
-const nFaces = triangleIndicesArray.length / 3;
 
 const p = runSim(
   vertexPosArray,
