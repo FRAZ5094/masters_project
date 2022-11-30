@@ -12,7 +12,7 @@ import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
 
-export const runSim = (
+export const simulate = (
   initialVertexPosArray: Float32Array,
   mass: number,
   k: number,

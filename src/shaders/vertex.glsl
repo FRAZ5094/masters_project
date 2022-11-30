@@ -1,7 +1,10 @@
-attribute vec3 oldPos;
+attribute float uaMag;
+
+varying float aMag;
 
 void main() {
 
-  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    aMag = uaMag;
 
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }

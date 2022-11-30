@@ -43,6 +43,48 @@ export const calculateA = (
   return a;
 };
 
+export const scaleByMax = (a: Float32Array): Float32Array => {
+  const n = a.length;
+
+  let aMax = 0;
+
+  for (let i = 0; i < n; i++) {
+    const aValue = a[i];
+
+    if (aValue > aMax) aMax = aValue;
+  }
+
+  for (let i = 0; i < n; i++) {
+    a[i] /= aMax;
+  }
+
+  return a;
+};
+
+export const generateAccelerationHeatmap = (
+  accelerationArray: Float32Array
+): Float32Array => {
+  const nVertices = accelerationArray.length / 3;
+
+  let aMagArray = new Float32Array(nVertices);
+
+  for (let i = 0; i < nVertices; i++) {
+    const stride = i * 3;
+
+    const ax = accelerationArray[stride + 0];
+    const ay = accelerationArray[stride + 1];
+    const az = accelerationArray[stride + 2];
+
+    const aMag = Math.sqrt(ax * ax + ay * ay + az * az);
+
+    aMagArray[i] = aMag;
+  }
+
+  aMagArray = scaleByMax(aMagArray);
+
+  return aMagArray;
+};
+
 export const handleArrows = (
   arrowsArray: THREE.ArrowHelper[],
   arrowPositions: Float32Array,
