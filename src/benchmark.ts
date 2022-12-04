@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { calculateSpringForceVector } from "./functions/forces/forces";
-import { isVertexSelfShadowed } from "./functions/intersections/intersections";
+import { isVertexSelfShadowed } from "./functions/collisions/collisions";
 import { calculateSurfaceNormals } from "./functions/vertexNormals/vertexNormals";
 
 const fn1 = isVertexSelfShadowed;

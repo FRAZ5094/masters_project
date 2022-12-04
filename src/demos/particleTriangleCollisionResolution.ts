@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { rayTriangleIntersection } from "../functions/intersections/intersections";
-import { cross } from "../functions/vector/vector";
+import { rayTriangleIntersection } from "../functions/collisions/collisions";
+import { cross, dot } from "../functions/vector/vector";
 import { calculateCentroidOfTriangle } from "../functions/vertexNormals/vertexNormals";
+import { GUI } from "dat.gui";
+
+const gui = new GUI();
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
@@ -60,23 +63,16 @@ particle.position.z = 1;
 
 scene.add(particle);
 
-// const intersectionPoint = new THREE.Mesh(
-//   new THREE.SphereGeometry(0.01, 10, 10),
-//   new THREE.MeshBasicMaterial({ color: 0x00ffff })
-// );
-
-// scene.add(intersectionPoint);
-
 const p0 = [0, 0, 1];
 
-const l = 5;
+const l = 100;
 
-const v = [0, 0, -1];
+const vDir = [0.25, -0.1, -1];
 
-const p1 = [p0[0] + l * v[0], p0[1] + l * v[1], p0[2] + l * v[2]];
+const p1 = [p0[0] + vDir[0], p0[1] + vDir[1], p0[2] + vDir[2]];
 
 const incidenceArrow = new THREE.ArrowHelper(
-  new THREE.Vector3(v[0], v[1], v[2]),
+  new THREE.Vector3(vDir[0], vDir[1], vDir[2]),
   new THREE.Vector3(p0[0], p0[1], p0[2])
 );
 
@@ -103,11 +99,12 @@ let { intersected, Ix, Iy, Iz } = rayTriangleIntersection(p0, p1, a, b, c, [
 
 console.log(intersected, Ix, Iy, Iz);
 
-if (intersected) {
-  let dx = p0[0] - Ix!;
-  let dy = p0[1] - Iy!;
-  let dz = p0[2] - Iz!;
+let dx: number, dy: number, dz: number;
 
+if (intersected) {
+  dx = p0[0] - Ix!;
+  dy = p0[1] - Iy!;
+  dz = p0[2] - Iz!;
   incidenceArrow.setLength(Math.sqrt(dx * dx + dy * dy + dz * dz));
 }
 
@@ -127,17 +124,34 @@ const centroid = calculateCentroidOfTriangle(
   c[2]
 );
 
-const normalArrow = new THREE.ArrowHelper(
-  new THREE.Vector3(nx, ny, nz),
-  new THREE.Vector3(Ix, Iy, Iz)
-  //   new THREE.Vector3(centroid[0], centroid[1], centroid[2])
+const n_v = new THREE.Vector3(nx, ny, nz);
+
+console.log(n_v);
+
+const I = new THREE.Vector3(Ix, Iy, Iz);
+
+const V_p_scale = dot(Ix! - p0[0], Iy! - p0[1], Iz! - p0[2], nx, ny, nz);
+
+console.log(V_p_scale);
+
+const V_px = nx * V_p_scale;
+const V_py = ny * V_p_scale;
+const V_pz = nz * V_p_scale;
+
+console.log({ V_px, V_py, V_pz });
+
+const V_rx = Ix! - 2 * V_px - p0[0];
+const V_ry = Iy! - 2 * V_py - p0[1];
+const V_rz = Iz! - 2 * V_pz - p0[2];
+
+const reflectionArrow = new THREE.ArrowHelper(
+  new THREE.Vector3(V_rx, V_ry, V_rz).normalize(),
+  I
 );
 
-normalArrow.setColor(0xff00ff);
+reflectionArrow.setColor(0xff0000);
 
-scene.add(normalArrow);
-
-//need to change rayTriangleIntersection to return the point of intersection
+scene.add(reflectionArrow);
 
 const animate = async () => {
   renderer.render(scene, camera);

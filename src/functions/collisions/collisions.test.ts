@@ -1,4 +1,4 @@
-import { isVertexSelfShadowed } from "./intersections";
+import { isVertexSelfShadowed } from "./collisions";
 import * as THREE from "three";
 import { calculateSurfaceNormals } from "../vertexNormals/vertexNormals";
 

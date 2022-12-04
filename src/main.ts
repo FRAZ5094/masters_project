@@ -37,7 +37,7 @@ let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 
 const simulationParams = {
-  nTimestep: 20,
+  nTimestep: 2,
   AM_ratio: 1,
   nWidthSegments: 20,
   k: 0.1,

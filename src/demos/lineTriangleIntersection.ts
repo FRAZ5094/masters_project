@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { rayTriangleIntersection } from "../functions/intersections/intersections";
+import { rayTriangleIntersection } from "../functions/collisions/collisions";
 import { GUI } from "dat.gui";
 import { cross } from "../functions/vector/vector";
 

@@ -7,7 +7,7 @@ import {
   calculateVertexNormals,
 } from "./functions/vertexNormals/vertexNormals";
 import { dot } from "./functions/vector/vector";
-import { isVertexSelfShadowed } from "./functions/intersections/intersections";
+import { isVertexSelfShadowed } from "./functions/collisions/collisions";
 import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
@@ -112,6 +112,10 @@ export const simulate = (
       let x = p[previousStride + 0];
       let y = p[previousStride + 1];
       let z = p[previousStride + 2];
+
+      if (i == Math.floor(nVertices / 2)) {
+        console.log({ x, y, z });
+      }
 
       let vx = v[vStride + 0];
       let vy = v[vStride + 1];

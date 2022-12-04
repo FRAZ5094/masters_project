@@ -156,3 +156,41 @@ export const isVertexSelfShadowed = (
   }
   return false;
 };
+
+export const particleTriangleCollisionResolution = (
+  I: number[],
+  p: number[],
+  v: number[],
+  n: number[]
+): number[] => {
+  const p1x = p[0] + v[0];
+  const p1y = p[1] + v[1];
+  const p1z = p[2] + v[2];
+
+  const dx = p1x - I[0];
+  const dy = p1y - I[1];
+  const dz = p1z - I[2];
+
+  //this is magnitude of the amount of velocity "left over" after the collision
+  const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  //dot product of the incidence vector with the normal of the plane, this is used to make sure Vp is the correct length
+  const Vp_scale = dot(I[0] - p[0], I[1] - p[1], I[2] - p[2], n[0], n[1], n[2]);
+
+  //vector of v projected onto the normal of the plane
+  const Vpx = n[0] * Vp_scale;
+  const Vpy = n[1] * Vp_scale;
+  const Vpz = n[2] * Vp_scale;
+
+  let Vrx = I[0] - 2 * Vpx - p[0];
+  let Vry = I[1] - 2 * Vpy - p[1];
+  let Vrz = I[2] - 2 * Vpz - p[2];
+
+  const Vr_mag = Math.sqrt(Vrx * Vrx + Vry * Vry + Vrz * Vrz);
+
+  Vrx *= mag / Vr_mag;
+  Vry *= mag / Vr_mag;
+  Vrz *= mag / Vr_mag;
+
+  return [Vrx, Vry, Vrz];
+};
