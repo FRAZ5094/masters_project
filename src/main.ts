@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getSpringIndicesArray } from "./functions/springArray/springArray";
-import { integrators, simulate } from "./simulation";
+import { integrators, simulate, SimulationParams } from "./simulation";
 
 // @ts-ignore
 import vertexShader from "./shaders/vertex.glsl";
@@ -17,7 +17,6 @@ import {
   handleVelocityArrows,
   handleVertexNormalArrows,
 } from "./functions/arrows/arrows";
-import { Side } from "three";
 
 console.log("ran main.ts");
 
@@ -36,13 +35,16 @@ let nCols: number;
 let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 
-const simulationParams = {
-  nTimestep: 2,
+const simulationParams: SimulationParams = {
+  nTimestep: 2000,
+  d: 1,
   AM_ratio: 1,
   nWidthSegments: 20,
   k: 0.1,
   dampingRatio: 0.1,
   dt: 0.01,
+  selfShadowing: false,
+  selfCollision: true,
 };
 
 let showSurfaceNormals = false;
@@ -55,14 +57,14 @@ let showVelocityArrows = false;
 let velocityArrows: THREE.ArrowHelper[] = [];
 let maxArrowLength: number = 0.1;
 
-let showAccelerationHeatmap = true;
+let showAccelerationHeatmap = false;
 let uaMagArray: Float32Array;
 
 //applying springs in 3x3 around point
 const xDepth = 1;
 const yDepth = 1;
 
-const runSim = () => {
+const runSim = async () => {
   const vertexPosArray = geometry.attributes.position.array as Float32Array;
 
   nVertices = vertexPosArray.length / 3;
@@ -92,8 +94,6 @@ const runSim = () => {
 
   timestepSliderElement.max = (simulationParams.nTimestep - 1).toString();
 
-  const mass = (d * d) / simulationParams.AM_ratio;
-
   triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
 
   trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
@@ -103,13 +103,9 @@ const runSim = () => {
   );
 
   p = simulate(
+    simulationParams,
     vertexPosArray,
-    mass,
-    simulationParams.k,
-    simulationParams.dampingRatio,
     springArrays,
-    simulationParams.nTimestep,
-    simulationParams.dt,
     integrator,
     trianglesAttachedToVertexArray,
     triangleIndicesArray
@@ -285,25 +281,30 @@ const geometry = new THREE.PlaneGeometry(
 
 const plane = new THREE.Mesh(
   geometry,
-  new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader: accelerationMagFragment,
-    side: THREE.DoubleSide,
-  })
+  new THREE.MeshNormalMaterial({ wireframe: true })
 );
 
-const wireFrame = new THREE.Mesh(
-  geometry,
-  new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    wireframe: true,
-  })
-);
+// const plane = new THREE.Mesh(
+//   geometry,
+//   new THREE.ShaderMaterial({
+//     vertexShader,
+//     fragmentShader: accelerationMagFragment,
+//     side: THREE.DoubleSide,
+//   })
+// );
 
-const scale = 1.0;
+// const wireFrame = new THREE.Mesh(
+//   geometry,
+//   new THREE.MeshBasicMaterial({
+//     color: 0x000000,
+//     wireframe: true,
+//   })
+// );
 
-wireFrame.scale.set(1.0, 1.0, scale);
-scene.add(wireFrame);
+// const scale = 1.0;
+
+// wireFrame.scale.set(1.0, 1.0, scale);
+// scene.add(wireFrame);
 scene.add(plane);
 
 const axesHelper = new THREE.AxesHelper();

@@ -12,14 +12,24 @@ import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
 
+export interface SimulationParams {
+  nTimestep: number;
+  d: number;
+  AM_ratio: number;
+  nWidthSegments: number;
+  k: number;
+  dampingRatio: number;
+  dt: number;
+  selfShadowing: boolean;
+  selfCollision: boolean;
+}
+
+let selfShadowing: boolean;
+
 export const simulate = (
+  simulationParams: SimulationParams,
   initialVertexPosArray: Float32Array,
-  mass: number,
-  k: number,
-  dampingRatio: number,
   springArrays: number[][][],
-  nTimestep: number,
-  dt: number,
   integratorName: integrators,
   trianglesAttachedToVertexArray: number[][],
   triangleIndicesArray: Uint16Array
@@ -34,7 +44,16 @@ export const simulate = (
 
   const nVertices = initialVertexPosArray.length / 3;
 
+  selfShadowing = simulationParams.selfShadowing;
+
+  const nTimestep = simulationParams.nTimestep;
+  const dt = simulationParams.dt;
+  const k = simulationParams.k;
+  const dampingRatio = simulationParams.dampingRatio;
+
   //this is the mass of a single particle
+  const mass =
+    (simulationParams.d * simulationParams.d) / simulationParams.AM_ratio;
   const massP = mass / nVertices;
 
   console.log(
@@ -113,9 +132,9 @@ export const simulate = (
       let y = p[previousStride + 1];
       let z = p[previousStride + 2];
 
-      if (i == Math.floor(nVertices / 2)) {
-        console.log({ x, y, z });
-      }
+      // if (i == Math.floor(nVertices / 2)) {
+      //   console.log({ x, y, z });
+      // }
 
       let vx = v[vStride + 0];
       let vy = v[vStride + 1];
@@ -250,26 +269,47 @@ export const f = (
 
   //finding out if the vertex is in the light
 
-  if (
-    !isVertexSelfShadowed(
-      vertexIndex,
-      [light.x, light.y, light.z],
-      vertexPosArray,
-      triangleIndicesArray,
-      surfaceNormalsArray
-    )
-  ) {
+  if (selfShadowing) {
     const dxl = x - light.x;
     const dyl = y - light.y;
-
-    const scale = Math.abs(dot(light.dirx, light.diry, light.dirz, nx, ny, nz));
-
-    if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
-      fx += light.mag * scale * light.dirx;
-      fy += light.mag * scale * light.diry;
-      fz += light.mag * scale * light.dirz;
+    if (
+      !isVertexSelfShadowed(
+        vertexIndex,
+        [light.x, light.y, light.z],
+        vertexPosArray,
+        triangleIndicesArray,
+        surfaceNormalsArray
+      )
+    ) {
+      if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+        const scale = Math.abs(
+          dot(light.dirx, light.diry, light.dirz, nx, ny, nz)
+        );
+        fx += light.mag * scale * light.dirx;
+        fy += light.mag * scale * light.diry;
+        fz += light.mag * scale * light.dirz;
+      }
     }
   }
+
+  // if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+  //   if (
+  //     !isVertexSelfShadowed(
+  //       vertexIndex,
+  //       [light.x, light.y, light.z],
+  //       vertexPosArray,
+  //       triangleIndicesArray,
+  //       surfaceNormalsArray
+  //     )
+  //   ) {
+  //     const scale = Math.abs(
+  //       dot(light.dirx, light.diry, light.dirz, nx, ny, nz)
+  //     );
+  //     fx += light.mag * scale * light.dirx;
+  //     fy += light.mag * scale * light.diry;
+  //     fz += light.mag * scale * light.dirz;
+  //   }
+  // }
 
   const ax = fx / mass;
   const ay = fy / mass;
