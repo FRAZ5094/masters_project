@@ -1,4 +1,8 @@
-import { vertexWillSelfCollide, isVertexSelfShadowed } from "./collisions";
+import {
+  vertexWillSelfCollide,
+  isVertexSelfShadowed,
+  rayTriangleIntersection,
+} from "./collisions";
 import * as THREE from "three";
 import { calculateSurfaceNormals } from "../vertexNormals/vertexNormals";
 
@@ -85,6 +89,84 @@ describe("isVertexSelfShadowed", () => {
     }
 
     expect(result).toEqual(ans);
+  });
+});
+
+describe("rayTriangleIntersection", () => {
+  it("should find an intersection when triangle is on p1", () => {
+    const a = [-0.5, -0.5, 0];
+    const b = [0.5, -0.5, 0];
+    const c = [0, 0.5, 0];
+
+    const p0 = [0, 0, 1];
+
+    const p1 = [0, 0, 0];
+
+    const n = [0, 0, 1];
+
+    expect(rayTriangleIntersection(p0, p1, a, b, c, n).intersected).toEqual(
+      true
+    );
+  });
+  it("should find an intersection when triangle is on p0", () => {
+    const a = [-0.5, -0.5, 1];
+    const b = [0.5, -0.5, 1];
+    const c = [0, 0.5, 1];
+
+    const p0 = [0, 0, 1];
+
+    const p1 = [0, 0, -1];
+
+    const n = [0, 0, 1];
+
+    expect(rayTriangleIntersection(p0, p1, a, b, c, n).intersected).toEqual(
+      true
+    );
+  });
+  it("should find an intersection when triangle is between p0 and p1", () => {
+    const a = [-0.5, -0.5, 0];
+    const b = [0.5, -0.5, 0];
+    const c = [0, 0.5, 0];
+
+    const p0 = [0, 0, 1];
+
+    const p1 = [0, 0, -1];
+
+    const n = [0, 0, 1];
+
+    expect(rayTriangleIntersection(p0, p1, a, b, c, n).intersected).toEqual(
+      true
+    );
+  });
+  it("should not find an intersection when the triangle is after p1", () => {
+    const a = [-0.5, -0.5, 0];
+    const b = [0.5, -0.5, 0];
+    const c = [0, 0.5, 0];
+
+    const p0 = [0, 0, 1];
+
+    const p1 = [0, 0, 0.5];
+
+    const n = [0, 0, 1];
+
+    expect(rayTriangleIntersection(p0, p1, a, b, c, n).intersected).toEqual(
+      false
+    );
+  });
+  it("should not find an intersection when the triangle is before p0", () => {
+    const a = [-0.5, -0.5, -2];
+    const b = [0.5, -0.5, -2];
+    const c = [0, 0.5, -2];
+
+    const p0 = [0, 0, 1];
+
+    const p1 = [0, 0, 0.5];
+
+    const n = [0, 0, 1];
+
+    expect(rayTriangleIntersection(p0, p1, a, b, c, n).intersected).toEqual(
+      false
+    );
   });
 });
 

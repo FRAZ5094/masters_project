@@ -51,7 +51,13 @@ export const rayTriangleIntersection = (
   //can't be cached
   const r = a / b;
 
-  if (r < 0.0) {
+  const dx = p1[0] - p0[0];
+  const dy = p1[1] - p0[1];
+  const dz = p1[2] - p0[2];
+
+  const rayMag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  if (r < 0 || r > rayMag) {
     return { intersected: false };
   }
 

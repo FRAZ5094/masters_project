@@ -33,7 +33,7 @@ const triangleGeo = new THREE.BufferGeometry();
 
 let a = [-0.5, -0.5, 0];
 let b = [0.5, -0.5, 0];
-let c = [0, 0.5, -0.5];
+let c = [0, 0.5, 0];
 
 //prettier-ignore
 const triangleVertices = new Float32Array([
@@ -67,7 +67,7 @@ const p0 = [0, 0, 1];
 
 const l = 100;
 
-const vDir = [0.25, -0.1, -1];
+const vDir = [0, 0, -1];
 
 const p1 = [p0[0] + vDir[0], p0[1] + vDir[1], p0[2] + vDir[2]];
 
@@ -91,20 +91,16 @@ nx /= nMag;
 ny /= nMag;
 nz /= nMag;
 
-let { intersected, Ix, Iy, Iz } = rayTriangleIntersection(p0, p1, a, b, c, [
-  nx,
-  ny,
-  nz,
-]);
+let { intersected, I } = rayTriangleIntersection(p0, p1, a, b, c, [nx, ny, nz]);
 
-console.log(intersected, Ix, Iy, Iz);
+console.log(intersected, I);
 
 let dx: number, dy: number, dz: number;
 
 if (intersected) {
-  dx = p0[0] - Ix!;
-  dy = p0[1] - Iy!;
-  dz = p0[2] - Iz!;
+  dx = p0[0] - I![0];
+  dy = p0[1] - I![1];
+  dz = p0[2] - I![2];
   incidenceArrow.setLength(Math.sqrt(dx * dx + dy * dy + dz * dz));
 }
 
@@ -128,9 +124,7 @@ const n_v = new THREE.Vector3(nx, ny, nz);
 
 console.log(n_v);
 
-const I = new THREE.Vector3(Ix, Iy, Iz);
-
-const V_p_scale = dot(Ix! - p0[0], Iy! - p0[1], Iz! - p0[2], nx, ny, nz);
+const V_p_scale = dot(I![0] - p0[0], I![1] - p0[1], I![2] - p0[2], nx, ny, nz);
 
 console.log(V_p_scale);
 
@@ -140,13 +134,13 @@ const V_pz = nz * V_p_scale;
 
 console.log({ V_px, V_py, V_pz });
 
-const V_rx = Ix! - 2 * V_px - p0[0];
-const V_ry = Iy! - 2 * V_py - p0[1];
-const V_rz = Iz! - 2 * V_pz - p0[2];
+const V_rx = I![0] - 2 * V_px - p0[0];
+const V_ry = I![1] - 2 * V_py - p0[1];
+const V_rz = I![2] - 2 * V_pz - p0[2];
 
 const reflectionArrow = new THREE.ArrowHelper(
   new THREE.Vector3(V_rx, V_ry, V_rz).normalize(),
-  I
+  new THREE.Vector3(I![0], I![1], I![2])
 );
 
 reflectionArrow.setColor(0xff0000);

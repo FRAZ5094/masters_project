@@ -112,7 +112,7 @@ const checkIntersections = () => {
         b,
         c,
         n
-      )
+      ).intersected
     ) {
       console.log("intersection", i);
       const geo = new THREE.BufferGeometry();
