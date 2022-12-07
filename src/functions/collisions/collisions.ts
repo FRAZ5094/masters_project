@@ -2,9 +2,7 @@ import { dot } from "../vector/vector";
 
 interface rayTriangleIntersectionReturn {
   intersected: boolean;
-  Ix?: number;
-  Iy?: number;
-  Iz?: number;
+  I?: number[];
 }
 
 export const rayTriangleIntersection = (
@@ -101,7 +99,9 @@ export const rayTriangleIntersection = (
     return { intersected: false };
   }
 
-  return { intersected: true, Ix, Iy, Iz };
+  const I = [Ix, Iy, Iz];
+
+  return { intersected: true, I };
 };
 
 export const isVertexSelfShadowed = (
@@ -157,40 +157,113 @@ export const isVertexSelfShadowed = (
   return false;
 };
 
+interface vertexWillSelfCollideReturn {
+  intersected: boolean;
+  I?: number[];
+  n?: number[];
+}
+
+export const vertexWillSelfCollide = (
+  vertexIndex: number,
+  p: number[],
+  p_new: number[],
+  vertexPosArray: Float32Array,
+  triangleIndicesArray: Uint16Array,
+  surfaceNormalsArray: Float32Array
+): vertexWillSelfCollideReturn => {
+  const nTriangles = triangleIndicesArray.length / 3;
+
+  for (let i = 0; i < nTriangles; i++) {
+    const ai = triangleIndicesArray[i * 3 + 0];
+    const bi = triangleIndicesArray[i * 3 + 1];
+    const ci = triangleIndicesArray[i * 3 + 2];
+
+    // check to make sure not to test triangles that the vertex is part of
+    // this is because it will always think it is intersecting with these triangles
+    if (vertexIndex == ai || vertexIndex == bi || vertexIndex == ci) continue;
+
+    const a = [
+      vertexPosArray[ai * 3 + 0],
+      vertexPosArray[ai * 3 + 1],
+      vertexPosArray[ai * 3 + 2],
+    ];
+    const b = [
+      vertexPosArray[bi * 3 + 0],
+      vertexPosArray[bi * 3 + 1],
+      vertexPosArray[bi * 3 + 2],
+    ];
+    const c = [
+      vertexPosArray[ci * 3 + 0],
+      vertexPosArray[ci * 3 + 1],
+      vertexPosArray[ci * 3 + 2],
+    ];
+
+    const n = [
+      surfaceNormalsArray[i * 3 + 0],
+      surfaceNormalsArray[i * 3 + 1],
+      surfaceNormalsArray[i * 3 + 2],
+    ];
+
+    const res = rayTriangleIntersection(p, p_new, a, b, c, n);
+
+    if (res.intersected) {
+      return { ...res, n };
+    }
+  }
+
+  return { intersected: false };
+};
+
 export const particleTriangleCollisionResolution = (
   I: number[],
-  p: number[],
+  p0: number[],
+  p1: number[],
   v: number[],
   n: number[]
 ): number[] => {
-  const p1x = p[0] + v[0];
-  const p1y = p[1] + v[1];
-  const p1z = p[2] + v[2];
-
-  const dx = p1x - I[0];
-  const dy = p1y - I[1];
-  const dz = p1z - I[2];
+  const dx = p1[0] - I[0];
+  const dy = p1[1] - I[1];
+  const dz = p1[1] - I[2];
 
   //this is magnitude of the amount of velocity "left over" after the collision
   const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
   //dot product of the incidence vector with the normal of the plane, this is used to make sure Vp is the correct length
-  const Vp_scale = dot(I[0] - p[0], I[1] - p[1], I[2] - p[2], n[0], n[1], n[2]);
+  const Vp_scale = dot(
+    I[0] - p0[0],
+    I[1] - p0[1],
+    I[2] - p0[2],
+    n[0],
+    n[1],
+    n[2]
+  );
 
   //vector of v projected onto the normal of the plane
   const Vpx = n[0] * Vp_scale;
   const Vpy = n[1] * Vp_scale;
   const Vpz = n[2] * Vp_scale;
 
-  let Vrx = I[0] - 2 * Vpx - p[0];
-  let Vry = I[1] - 2 * Vpy - p[1];
-  let Vrz = I[2] - 2 * Vpz - p[2];
+  let Vrx = I[0] - 2 * Vpx - p0[0];
+  let Vry = I[1] - 2 * Vpy - p0[1];
+  let Vrz = I[2] - 2 * Vpz - p0[2];
 
-  const Vr_mag = Math.sqrt(Vrx * Vrx + Vry * Vry + Vrz * Vrz);
+  const VrMag = Math.sqrt(Vrx * Vrx + Vry * Vry + Vrz * Vrz);
 
-  Vrx *= mag / Vr_mag;
-  Vry *= mag / Vr_mag;
-  Vrz *= mag / Vr_mag;
+  Vrx *= mag / VrMag;
+  Vry *= mag / VrMag;
+  Vrz *= mag / VrMag;
 
-  return [Vrx, Vry, Vrz];
+  //new position of vertex is the intersection point vector add the reflected velocity vector
+  const x_new = I[0] + Vrx;
+  const y_new = I[1] + Vrz;
+  const z_new = I[2] + Vry;
+
+  const vMag = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+  //new velocity of vertex is the reflected velocity vector but with the magnitude of the vertex's velocity
+  const vx_new = (Vrx / VrMag) * vMag;
+  const vy_new = (Vry / VrMag) * vMag;
+  const vz_new = (Vrz / VrMag) * vMag;
+
+  return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
 };

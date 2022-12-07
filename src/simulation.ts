@@ -7,7 +7,11 @@ import {
   calculateVertexNormals,
 } from "./functions/vertexNormals/vertexNormals";
 import { dot } from "./functions/vector/vector";
-import { isVertexSelfShadowed } from "./functions/collisions/collisions";
+import {
+  isVertexSelfShadowed,
+  particleTriangleCollisionResolution,
+  vertexWillSelfCollide,
+} from "./functions/collisions/collisions";
 import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
@@ -20,11 +24,14 @@ export interface SimulationParams {
   k: number;
   dampingRatio: number;
   dt: number;
+  lightForce: boolean;
   selfShadowing: boolean;
   selfCollision: boolean;
 }
 
-let selfShadowing: boolean;
+let selfShadowingCheck: boolean;
+let selfCollisionCheck: boolean;
+let lightForce: boolean;
 
 export const simulate = (
   simulationParams: SimulationParams,
@@ -44,7 +51,9 @@ export const simulate = (
 
   const nVertices = initialVertexPosArray.length / 3;
 
-  selfShadowing = simulationParams.selfShadowing;
+  selfShadowingCheck = simulationParams.selfShadowing;
+  selfCollisionCheck = simulationParams.selfCollision;
+  lightForce = simulationParams.lightForce;
 
   const nTimestep = simulationParams.nTimestep;
   const dt = simulationParams.dt;
@@ -61,11 +70,6 @@ export const simulate = (
       (Float32Array.BYTES_PER_ELEMENT * nTimestep * nVertices * 3) / 1000000 +
       "mb"
   );
-  // console.log(
-  //   "v will be " +
-  //     (Float32Array.BYTES_PER_ELEMENT * nVertices * 3) / 1000000 +
-  //     "mb"
-  // );
 
   console.log("Initializing memory");
 
@@ -144,7 +148,7 @@ export const simulate = (
       let ny = vertexNormals[i * 3 + 1];
       let nz = vertexNormals[i * 3 + 2];
 
-      const [x_new, y_new, z_new, vx_new, vy_new, vz_new] = integrator(
+      let [x_new, y_new, z_new, vx_new, vy_new, vz_new] = integrator(
         x,
         y,
         z,
@@ -175,6 +179,55 @@ export const simulate = (
       p[stride + 0] = x_new;
       p[stride + 1] = y_new;
       p[stride + 2] = z_new;
+    }
+
+    if (selfCollisionCheck) {
+      for (let i = 0; i < nVertices; i++) {
+        //stride value for this vertex at this timestep
+        let stride = i * 3 + t * (nVertices * 3);
+
+        //stride value for this vertex in the previous timestep
+        let previousStride = stride - nVertices * 3;
+
+        const p_old = [
+          p[previousStride + 0],
+          p[previousStride + 1],
+          p[previousStride + 2],
+        ];
+        const p_new = [p[stride + 0], p[stride + 1], p[stride + 2]];
+
+        // if (JSON.stringify(p_old) !== JSON.stringify(p_new)) {
+        //   console.log(p_new[2] - p_old[2]);
+        // }
+        const res = vertexWillSelfCollide(
+          i,
+          p_old,
+          p_new,
+          vertexPosArray,
+          triangleIndicesArray,
+          surfaceNormalsArray
+        );
+
+        if (res.intersected) {
+          console.log(i);
+          // const vStride = i * 3;
+          // const v_new = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
+          // const [x_new, y_new, z_new, vx_new, vy_new, vz_new] =
+          //   particleTriangleCollisionResolution(
+          //     res.I!,
+          //     p_old,
+          //     p_new,
+          //     v_new,
+          //     res.n!
+          //   );
+          // v[vStride + 0] = vx_new;
+          // v[vStride + 1] = vy_new;
+          // v[vStride + 2] = vz_new;
+          // p[stride + 0] = x_new;
+          // p[stride + 1] = y_new;
+          // p[stride + 2] = z_new;
+        }
+      }
     }
   }
   console.log("Finished simulation loop");
@@ -214,9 +267,9 @@ export const f = (
     y: 0,
     z: 1,
     r: 0.25,
-    dirx: 0,
-    diry: 0,
-    dirz: -1,
+    dirX: 0,
+    dirY: 0,
+    dirZ: -1,
     mag: 10 / nVertices,
   };
 
@@ -269,47 +322,34 @@ export const f = (
 
   //finding out if the vertex is in the light
 
-  if (selfShadowing) {
+  if (lightForce) {
     const dxl = x - light.x;
     const dyl = y - light.y;
-    if (
-      !isVertexSelfShadowed(
-        vertexIndex,
-        [light.x, light.y, light.z],
-        vertexPosArray,
-        triangleIndicesArray,
-        surfaceNormalsArray
-      )
-    ) {
-      if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+    if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+      let applyLightForce = true;
+      if (
+        selfShadowingCheck &&
+        isVertexSelfShadowed(
+          vertexIndex,
+          [light.x, light.y, light.z],
+          vertexPosArray,
+          triangleIndicesArray,
+          surfaceNormalsArray
+        )
+      ) {
+        applyLightForce = false;
+      }
+
+      if (applyLightForce) {
         const scale = Math.abs(
-          dot(light.dirx, light.diry, light.dirz, nx, ny, nz)
+          dot(light.dirX, light.dirY, light.dirZ, nx, ny, nz)
         );
-        fx += light.mag * scale * light.dirx;
-        fy += light.mag * scale * light.diry;
-        fz += light.mag * scale * light.dirz;
+        fx += light.mag * scale * light.dirX;
+        fy += light.mag * scale * light.dirY;
+        fz += light.mag * scale * light.dirZ;
       }
     }
   }
-
-  // if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
-  //   if (
-  //     !isVertexSelfShadowed(
-  //       vertexIndex,
-  //       [light.x, light.y, light.z],
-  //       vertexPosArray,
-  //       triangleIndicesArray,
-  //       surfaceNormalsArray
-  //     )
-  //   ) {
-  //     const scale = Math.abs(
-  //       dot(light.dirx, light.diry, light.dirz, nx, ny, nz)
-  //     );
-  //     fx += light.mag * scale * light.dirx;
-  //     fy += light.mag * scale * light.diry;
-  //     fz += light.mag * scale * light.dirz;
-  //   }
-  // }
 
   const ax = fx / mass;
   const ay = fy / mass;

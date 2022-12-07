@@ -28,7 +28,6 @@ const d = 1;
 const integrator: integrators = "rk4";
 
 let p: Float32Array;
-let pt: Float32Array;
 let nVertices: number;
 let nRows: number;
 let nCols: number;
@@ -36,13 +35,14 @@ let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 
 const simulationParams: SimulationParams = {
-  nTimestep: 2000,
+  nTimestep: 20,
   d: 1,
   AM_ratio: 1,
-  nWidthSegments: 20,
+  nWidthSegments: 2,
   k: 0.1,
   dampingRatio: 0.1,
   dt: 0.01,
+  lightForce: true,
   selfShadowing: false,
   selfCollision: true,
 };
