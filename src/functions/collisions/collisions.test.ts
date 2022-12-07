@@ -145,7 +145,7 @@ describe("rayTriangleIntersection", () => {
 
     const p0 = [0, 0, 1];
 
-    const p1 = [0, 0, 0.5];
+    const p1 = [0, 0, 0.0001];
 
     const n = [0, 0, 1];
 
@@ -158,7 +158,7 @@ describe("rayTriangleIntersection", () => {
     const b = [0.5, -0.5, -2];
     const c = [0, 0.5, -2];
 
-    const p0 = [0, 0, 1];
+    const p0 = [0, 0, -1.9999];
 
     const p1 = [0, 0, 0.5];
 

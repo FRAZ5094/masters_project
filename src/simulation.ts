@@ -12,6 +12,10 @@ import {
   particleTriangleCollisionResolution,
   vertexWillSelfCollide,
 } from "./functions/collisions/collisions";
+import {
+  vertexIsInLight,
+  vertexIsInLightNoProjection,
+} from "./functions/projection/projection";
 import { round } from "./functions/misc/misc";
 
 export type integrators = "euler" | "rk4";
@@ -196,9 +200,6 @@ export const simulate = (
         ];
         const p_new = [p[stride + 0], p[stride + 1], p[stride + 2]];
 
-        // if (JSON.stringify(p_old) !== JSON.stringify(p_new)) {
-        //   console.log(p_new[2] - p_old[2]);
-        // }
         const res = vertexWillSelfCollide(
           i,
           p_old,
@@ -209,23 +210,25 @@ export const simulate = (
         );
 
         if (res.intersected) {
-          console.log(i);
-          // const vStride = i * 3;
-          // const v_new = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
-          // const [x_new, y_new, z_new, vx_new, vy_new, vz_new] =
-          //   particleTriangleCollisionResolution(
-          //     res.I!,
-          //     p_old,
-          //     p_new,
-          //     v_new,
-          //     res.n!
-          //   );
-          // v[vStride + 0] = vx_new;
-          // v[vStride + 1] = vy_new;
-          // v[vStride + 2] = vz_new;
-          // p[stride + 0] = x_new;
-          // p[stride + 1] = y_new;
-          // p[stride + 2] = z_new;
+          console.log("intersection", t);
+          const vStride = i * 3;
+          const v_new = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
+          const [x_new, y_new, z_new, vx_new, vy_new, vz_new] =
+            particleTriangleCollisionResolution(
+              res.I!,
+              p_old,
+              p_new,
+              v_new,
+              res.n!
+            );
+
+          v[vStride + 0] = vx_new;
+          v[vStride + 1] = vy_new;
+          v[vStride + 2] = vz_new;
+
+          p[stride + 0] = x_new;
+          p[stride + 1] = y_new;
+          p[stride + 2] = z_new;
         }
       }
     }
@@ -266,7 +269,7 @@ export const f = (
     x: 0,
     y: 0,
     z: 1,
-    r: 0.25,
+    r: 0.5,
     dirX: 0,
     dirY: 0,
     dirZ: -1,
@@ -314,7 +317,17 @@ export const f = (
   fy += fDamperY;
   fz += fDamperZ;
 
-  // if (vertexIndex == nVertices - 1) {
+  // if (vertexIndex == 0) {
+  //   fy += -0.5;
+  //   fx += 0.5;
+  //   if (t < 20) {
+  //     fz += 0.5;
+  //   } else {
+  //     fz -= 0.5;
+  //   }
+  // }
+
+  // } else if (vertexIndex == nVertices - 1) {
   //   fy += 0.5;
   //   fx += -0.5;
   //   fz += 0.5;
@@ -323,9 +336,13 @@ export const f = (
   //finding out if the vertex is in the light
 
   if (lightForce) {
-    const dxl = x - light.x;
-    const dyl = y - light.y;
-    if (Math.sqrt(dxl * dxl + dyl * dyl) < light.r) {
+    if (
+      vertexIsInLight([x, y, z], [light.x, light.y, light.z], light.r, [
+        light.dirX,
+        light.dirY,
+        light.dirZ,
+      ])
+    ) {
       let applyLightForce = true;
       if (
         selfShadowingCheck &&

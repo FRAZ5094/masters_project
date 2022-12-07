@@ -35,16 +35,16 @@ let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 
 const simulationParams: SimulationParams = {
-  nTimestep: 20,
+  nTimestep: 200,
   d: 1,
   AM_ratio: 1,
-  nWidthSegments: 2,
-  k: 0.1,
+  nWidthSegments: 20,
+  k: 1,
   dampingRatio: 0.1,
   dt: 0.01,
   lightForce: true,
   selfShadowing: false,
-  selfCollision: true,
+  selfCollision: false,
 };
 
 let showSurfaceNormals = false;

@@ -55,6 +55,7 @@ export const rayTriangleIntersection = (
   const dy = p1[1] - p0[1];
   const dz = p1[2] - p0[2];
 
+  //added by me to make sure that if the triangle is not between the two points that it won't count as an intersection
   const rayMag = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
   if (r < 0 || r > rayMag) {
