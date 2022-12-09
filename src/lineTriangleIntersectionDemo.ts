@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { rayTriangleIntersection } from "./functions/collisions/collisions";
+import { rayTriangleIntersection } from "./softBodyFunctions/collisions/collisions";
 import { GUI } from "dat.gui";
-import { cross } from "./functions/vector/vector";
+import { cross } from "./softBodyFunctions/vector/vector";
 
 let arrow: THREE.ArrowHelper;
 const intersectedTriangles: THREE.Mesh[] = [];

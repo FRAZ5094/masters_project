@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { rayTriangleIntersection } from "../functions/collisions/collisions";
-import { cross, dot } from "../functions/vector/vector";
-import { calculateCentroidOfTriangle } from "../functions/vertexNormals/vertexNormals";
+import { rayTriangleIntersection } from "../softBodyFunctions/collisions/collisions";
+import { cross, dot } from "../softBodyFunctions/vector/vector";
+import { calculateCentroidOfTriangle } from "../softBodyFunctions/vertexNormals/vertexNormals";
 import { GUI } from "dat.gui";
 
 const gui = new GUI();

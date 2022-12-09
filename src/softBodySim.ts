@@ -1,22 +1,19 @@
 import {
   calculateDampingForce,
   calculateSpringForce,
-} from "./functions/forces/forces";
+} from "./softBodyFunctions/forces/forces";
 import {
   calculateSurfaceNormals,
   calculateVertexNormals,
-} from "./functions/vertexNormals/vertexNormals";
-import { dot } from "./functions/vector/vector";
+} from "./softBodyFunctions/vertexNormals/vertexNormals";
+import { dot } from "./softBodyFunctions/vector/vector";
 import {
   isVertexSelfShadowed,
   particleTriangleCollisionResolution,
   vertexWillSelfCollide,
-} from "./functions/collisions/collisions";
-import {
-  vertexIsInLight,
-  vertexIsInLightNoProjection,
-} from "./functions/projection/projection";
-import { round } from "./functions/misc/misc";
+} from "./softBodyFunctions/collisions/collisions";
+import { vertexIsInLight } from "./softBodyFunctions/projection/projection";
+import { round } from "./softBodyFunctions/misc/misc";
 
 export type integrators = "euler" | "rk4";
 
@@ -266,13 +263,13 @@ export const f = (
   let fz = 0;
 
   const light = {
-    x: 0,
+    x: 0.5,
     y: 0,
-    z: 1,
+    z: 0.01,
     r: 0.5,
-    dirX: 0,
+    dirX: 0.707,
     dirY: 0,
-    dirZ: -1,
+    dirZ: -0.707,
     mag: 10 / nVertices,
   };
 

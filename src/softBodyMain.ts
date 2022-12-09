@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { getSpringIndicesArray } from "./functions/springArray/springArray";
-import { integrators, simulate, SimulationParams } from "./simulation";
+import { getSpringIndicesArray } from "./softBodyFunctions/springArray/springArray";
+import { integrators, simulate, SimulationParams } from "./softBodySim";
 
 // @ts-ignore
 import vertexShader from "./shaders/vertex.glsl";
 // @ts-ignore
 import accelerationMagFragment from "./shaders/accelerationMagFragment.glsl";
-import { getTrianglesAttachedToVertexArray } from "./functions/vertexNormals/vertexNormals";
+import { getTrianglesAttachedToVertexArray } from "./softBodyFunctions/vertexNormals/vertexNormals";
 import {
   calculateA,
   calculateV,
@@ -16,7 +16,7 @@ import {
   handleSurfaceNormalArrows,
   handleVelocityArrows,
   handleVertexNormalArrows,
-} from "./functions/arrows/arrows";
+} from "./softBodyFunctions/arrows/arrows";
 
 console.log("ran main.ts");
 

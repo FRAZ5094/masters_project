@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "dat.gui";
-import { Octree } from "../functions/Octree/Octree";
-import { f } from "../simulation";
+import { Octree } from "../softBodyFunctions/Octree/Octree";
+import { f } from "../softBodySim";
 
 const boxes: THREE.Mesh[] = [];
 

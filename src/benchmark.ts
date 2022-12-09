@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { calculateSpringForceVector } from "./functions/forces/forces";
-import { isVertexSelfShadowed } from "./functions/collisions/collisions";
-import { calculateSurfaceNormals } from "./functions/vertexNormals/vertexNormals";
+import { calculateSpringForceVector } from "./softBodyFunctions/forces/forces";
+import { isVertexSelfShadowed } from "./softBodyFunctions/collisions/collisions";
+import { calculateSurfaceNormals } from "./softBodyFunctions/vertexNormals/vertexNormals";
 
 const fn1 = isVertexSelfShadowed;
 const fn2 = calculateSpringForceVector;
