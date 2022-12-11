@@ -1,34 +1,64 @@
 import { orbitEuler } from "./orbitFunctions/integrators";
-import { euler } from "./softBodySim";
+import { mass } from "./orbitMain";
 
 export const runOrbitSim = (
-  nTimesteps: number,
+  nTimestep: number,
   dt: number,
-  satelliteInitialPos: number[],
-  satelliteInitialV: number[]
+  masses: mass[]
 ): Float32Array => {
-  const p = new Float32Array(nTimesteps * 3);
+  const nMasses = masses.length;
 
-  p[0] = satelliteInitialPos[0];
-  p[1] = satelliteInitialPos[1];
-  p[2] = satelliteInitialPos[2];
+  //contains the positions of all the masses in the simulation
+  const p = new Float32Array(nMasses * 3 * nTimestep);
+  //contains the velocity of all the masses for this timestep
+  const v = new Float32Array(nMasses * 3);
 
-  let vx = satelliteInitialV[0];
-  let vy = satelliteInitialV[1];
-  let vz = satelliteInitialV[2];
+  //contains all the masses of the objects in the simulation
+  const massArray = new Float32Array(nMasses);
 
-  for (let t = 1; t < nTimesteps; t++) {
-    const stride = t * 3;
+  for (let i = 0; i < nMasses; i++) {
+    const stride = i * 3;
 
-    const pt = [p[stride + 0], p[stride + 1], p[stride + 2]];
+    p[stride + 0] = masses[i].x;
+    p[stride + 1] = masses[i].y;
+    p[stride + 2] = masses[i].z;
 
-    let px_new: number, py_new: number, pz_new: number;
+    v[stride + 0] = masses[i].vx;
+    v[stride + 1] = masses[i].vy;
+    v[stride + 2] = masses[i].vz;
 
-    [px_new, py_new, pz_new, vx, vy, vz] = orbitEuler(pt, [vx, vy, vz], dt);
+    massArray[i] = masses[i].m;
+  }
 
-    p[stride + 0] = px_new;
-    p[stride + 1] = py_new;
-    p[stride + 2] = pz_new;
+  for (let t = 1; t < nTimestep; t++) {
+    const ptOthers = p.slice((t - 1) * nMasses * 3, t * nMasses * 3);
+    for (let i = 0; i < nMasses; i++) {
+      const stride = i * 3 + t * nMasses * 3;
+      const prevStride = stride - nMasses * 3;
+      const vStride = i * 3;
+
+      const pt = [p[prevStride + 0], p[prevStride + 1], p[prevStride + 2]];
+
+      const vt = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
+
+      if (t == 1) console.log(ptOthers);
+
+      const [px_new, py_new, pz_new, vx_new, vy_new, vz_new] = orbitEuler(
+        pt,
+        vt,
+        ptOthers,
+        massArray,
+        dt
+      );
+
+      p[stride + 0] = px_new;
+      p[stride + 1] = py_new;
+      p[stride + 2] = pz_new;
+
+      v[vStride + 0] = vx_new;
+      v[vStride + 1] = vy_new;
+      v[vStride + 2] = vz_new;
+    }
   }
 
   return p;
