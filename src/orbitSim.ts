@@ -1,5 +1,6 @@
 import { orbitEuler } from "./orbitFunctions/integrators";
 import { mass } from "./orbitMain";
+import { round } from "./softBodyFunctions/misc/misc";
 
 export const runOrbitSim = (
   nTimestep: number,
@@ -30,7 +31,22 @@ export const runOrbitSim = (
     massArray[i] = masses[i].m;
   }
 
+  const simLoopStartTime = performance.now();
+
   for (let t = 1; t < nTimestep; t++) {
+    if (t % (nTimestep / 100) == 0) {
+      const timeElapsed = performance.now() - simLoopStartTime;
+
+      const estimatedTotalSimTime: number =
+        ((performance.now() - simLoopStartTime) / t) * nTimestep;
+      console.log(
+        "Simulation progress: " +
+          round((t / nTimestep) * 100, 0) +
+          "% " +
+          round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
+          " seconds left"
+      );
+    }
     const ptOthers = p.slice((t - 1) * nMasses * 3, t * nMasses * 3);
     for (let i = 0; i < nMasses; i++) {
       const stride = i * 3 + t * nMasses * 3;
