@@ -281,6 +281,8 @@ export const raySphereIntersection = (
   circleCenter: number[],
   r: number
 ): boolean => {
+  //immersive math 3.12
+
   const dx = p1[0] - p0[0];
   const dy = p1[1] - p0[1];
   const dz = p1[2] - p0[2];
@@ -305,5 +307,20 @@ export const raySphereIntersection = (
     ) -
     r * r;
 
-  return b * b - a * c >= 0;
+  const determinant = b * b - a * c;
+
+  if (determinant < 0) return false;
+
+  const rMag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  if (determinant == 0) {
+    const t = -b / a;
+
+    return t <= rMag;
+  }
+
+  const t1 = (-b + determinant) / a;
+  const t2 = (-b - determinant) / a;
+
+  return t1 <= rMag && t2 <= rMag;
 };

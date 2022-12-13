@@ -281,7 +281,7 @@ describe("isVertexSelfColliding", () => {
 });
 
 describe("raySphereIntersection", () => {
-  it("should find an intersection when the point is going through the center of the circle", () => {
+  it("should find an intersection when the ray is going through the center of the sphere", () => {
     const p0 = [0, 0, 2];
     const p1 = [0, 0, -2];
 
@@ -289,5 +289,24 @@ describe("raySphereIntersection", () => {
     const r = 1;
 
     expect(raySphereIntersection(p0, p1, c, r)).toBe(true);
+  });
+
+  it("should not find an intersection when the ray is infront of the sphere", () => {
+    const p0 = [0, 0, 20];
+    const p1 = [0, 0, 11];
+
+    const c = [0, 0, 0];
+    const r = 10;
+
+    expect(raySphereIntersection(p0, p1, c, r)).toBe(false);
+  });
+  it("should not find an intersection when the ray is behind of the sphere", () => {
+    const p0 = [0, 0, -10];
+    const p1 = [0, 0, -20];
+
+    const c = [0, 0, 0];
+    const r = 8;
+
+    expect(raySphereIntersection(p0, p1, c, r)).toBe(false);
   });
 });
