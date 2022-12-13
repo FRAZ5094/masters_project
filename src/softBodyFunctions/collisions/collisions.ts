@@ -1,6 +1,6 @@
 import { dot } from "../vector/vector";
 
-interface rayTriangleIntersectionReturn {
+interface intersectionReturn {
   intersected: boolean;
   I?: number[];
 }
@@ -12,7 +12,7 @@ export const rayTriangleIntersection = (
   Tb: number[],
   Tc: number[],
   n: number[]
-): rayTriangleIntersectionReturn => {
+): intersectionReturn => {
   // Copyright 2001, 2012, 2021 Dan Sunday
   // This code may be freely used and modified for any purpose
   // providing that this copyright notice is included with it.
@@ -273,4 +273,37 @@ export const particleTriangleCollisionResolution = (
   const vz_new = (Vrz / VrMag) * vMag;
 
   return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
+};
+
+export const raySphereIntersection = (
+  p0: number[],
+  p1: number[],
+  circleCenter: number[],
+  r: number
+): boolean => {
+  const dx = p1[0] - p0[0];
+  const dy = p1[1] - p0[1];
+  const dz = p1[2] - p0[2];
+
+  //a = dd;
+  const a = dot(dx, dy, dz, dy, dx, dz);
+
+  const s_minus_c_x = p0[0] - circleCenter[0];
+  const s_minus_c_y = p0[1] - circleCenter[1];
+  const s_minus_c_z = p0[2] - circleCenter[2];
+
+  const b = dot(dx, dy, dz, s_minus_c_x, s_minus_c_y, s_minus_c_z);
+
+  const c =
+    dot(
+      s_minus_c_x,
+      s_minus_c_y,
+      s_minus_c_z,
+      s_minus_c_x,
+      s_minus_c_y,
+      s_minus_c_z
+    ) -
+    r * r;
+
+  return b * b - a * c >= 0;
 };

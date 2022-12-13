@@ -2,6 +2,7 @@ import {
   vertexWillSelfCollide,
   isVertexSelfShadowed,
   rayTriangleIntersection,
+  raySphereIntersection,
 } from "./collisions";
 import * as THREE from "three";
 import { calculateSurfaceNormals } from "../vertexNormals/vertexNormals";
@@ -276,5 +277,17 @@ describe("isVertexSelfColliding", () => {
     }
 
     expect(result).toEqual(ans);
+  });
+});
+
+describe("raySphereIntersection", () => {
+  it("should find an intersection when the point is going through the center of the circle", () => {
+    const p0 = [0, 0, 2];
+    const p1 = [0, 0, -2];
+
+    const c = [0, 0, 0];
+    const r = 1;
+
+    expect(raySphereIntersection(p0, p1, c, r)).toBe(true);
   });
 });
