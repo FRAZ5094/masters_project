@@ -1,3 +1,4 @@
+import { distanceBetweenTwoParallelPlanes } from "../projection/projection";
 import { dot } from "../vector/vector";
 
 interface intersectionReturn {
@@ -323,4 +324,54 @@ export const raySphereIntersection = (
   const t2 = (-b - determinant) / a;
 
   return t1 <= rMag && t2 <= rMag;
+};
+
+export const isSphereShadowingPoint = (
+  p: number[],
+  lightSourcePos: number[],
+  c: number[],
+  r: number
+): boolean => {
+  //use a point on the edge of the circle which is the cross section of the centre of the sphere
+
+  const T = [c[0] + r, c[1], c[2]];
+
+  //find the distance from the light source to the center of the sphere
+  const dx = c[0] - lightSourcePos[0];
+  const dy = c[1] - lightSourcePos[1];
+  const dz = c[2] - lightSourcePos[2];
+  const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  //find the distance between a plane normal to the light source and a parallel plane that contains the point p
+
+  //find the normal of the plane in the direction of light source from the centre of the sphere
+
+  const n = [dx / d, dy / d, dz / d];
+
+  //distance that shadow travels before the plane that the point p is in
+  const ds = distanceBetweenTwoParallelPlanes(c, p, n);
+
+  //using similar triangles to get the radius of the shadow at the point p
+
+  const shadowRadiusAtP = 2 * r * (ds / d + 1);
+
+  //do a inside sphere check on the point
+
+  //need a point on the parallel plane in the middle of the shadow
+  const pcx = c[0] + ds * n[0];
+  const pcy = c[1] + ds * n[1];
+  const pcz = c[2] + ds * n[2];
+
+  //sphere check between pc and p;
+
+  //dx on the shadow
+  const dx_s = pcx - p[0];
+  const dy_s = pcy - p[1];
+  const dz_s = pcz - p[2];
+
+  const distFromCenterOfSphereShadow = Math.sqrt(
+    dx_s * dx_s + dy_s * dy_s + dz_s * dz_s
+  );
+
+  return distFromCenterOfSphereShadow <= shadowRadiusAtP;
 };
