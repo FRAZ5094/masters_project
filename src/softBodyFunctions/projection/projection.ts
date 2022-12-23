@@ -44,8 +44,8 @@ export const distanceBetweenTwoParallelPlanes = (
   p1: number[],
   n: number[]
 ): number => {
-  //p0 is the point on the plane with normal n
-  //p1 is the point on the other plane
+  //p0 is the point on the plane with normal n (centre of planet)
+  //p1 is the point on the other plane (where the satellite is)
   //n is the normal vector is the plane, assuming n is normalized
 
   //find the vector from p0 to p1

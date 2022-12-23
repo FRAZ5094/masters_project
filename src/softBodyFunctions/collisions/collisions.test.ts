@@ -3,6 +3,7 @@ import {
   isVertexSelfShadowed,
   rayTriangleIntersection,
   raySphereIntersection,
+  isSphereShadowingPoint,
 } from "./collisions";
 import * as THREE from "three";
 import { calculateSurfaceNormals } from "../vertexNormals/vertexNormals";
@@ -310,3 +311,17 @@ describe("raySphereIntersection", () => {
     expect(raySphereIntersection(p0, p1, c, r)).toBe(false);
   });
 });
+
+// describe("isSphereShadowingPoint", () => {
+//   it("should be shadowed when the point is in the center of the sphere's shadow", () => {
+//     const p = [0, 0, -10];
+
+//     const lightSourcePos = [0, 0, 10];
+
+//     const c = [0, 0, 0];
+
+//     const r = 1;
+
+//     expect(isSphereShadowingPoint(p, lightSourcePos, c, r)).toBe(true);
+//   });
+// });

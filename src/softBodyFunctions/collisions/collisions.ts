@@ -334,6 +334,7 @@ export const isSphereShadowingPoint = (
 ): boolean => {
   //use a point on the edge of the circle which is the cross section of the centre of the sphere
 
+  //R NEEDS TO THE BE THE RADIUS OF THE PLANET NOT THE LIGHT SOURCE
   const T = [c[0] + r, c[1], c[2]];
 
   //find the distance from the light source to the center of the sphere
