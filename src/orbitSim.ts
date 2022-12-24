@@ -57,7 +57,17 @@ export const runOrbitSim = (
 
       const vt = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
 
-      if (t == 1) console.log(ptOthers);
+      //if the object is the earth, it can't be effected by other the forces of other objects on it
+      if (i == 1) {
+        p[stride + 0] = pt[0];
+        p[stride + 1] = pt[1];
+        p[stride + 2] = pt[2];
+
+        v[vStride + 0] = vt[0];
+        v[vStride + 1] = vt[1];
+        v[vStride + 2] = vt[2];
+        continue;
+      }
 
       const [px_new, py_new, pz_new, vx_new, vy_new, vz_new] = orbitEuler(
         pt,
@@ -66,6 +76,7 @@ export const runOrbitSim = (
         massArray,
         dt
       );
+      // console.log("calculated for i=", i);
 
       p[stride + 0] = px_new;
       p[stride + 1] = py_new;

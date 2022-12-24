@@ -10,12 +10,12 @@ let t = 0;
 let playing = false;
 let speed = 1;
 let targetFPS = 60;
-const speedOptions = [1, 100, 1000, 86400];
+const speedOptions = [1, 100, 1000, 10000];
 
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const nTimestep: number = oneYearInSeconds * 0.2;
+const nTimestep: number = oneYearInSeconds;
 const dt: number = 1; //in seconds
 const satelliteM: number = 1;
 
@@ -34,21 +34,21 @@ const camera = new THREE.PerspectiveCamera(
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-const axesHelper = new THREE.AxesHelper(2);
+const axesHelper = new THREE.AxesHelper(0.3);
 
 scene.add(axesHelper);
 
 camera.position.set(1, 1, 1).setLength(1);
 controls.update();
 
-// const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+const ambient = new THREE.AmbientLight(0xffffff, 0.2);
 
-// scene.add(ambient);
+scene.add(ambient);
 
 const updatePlanetPos = () => {
   const pt = p.slice(t * nMasses * 3, (t + 1) * nMasses * 3);
 
-  const trailsIndex = 2;
+  const trailsIndex = 0;
 
   for (let i = 0; i < nMasses; i++) {
     const stride = i * 3;
@@ -142,6 +142,12 @@ const intervalFunction = () => {
     }
   }
 };
+
+const simulateButton = document.getElementById(
+  "simulateButton"
+) as HTMLButtonElement;
+
+// simulateButton.onclick = () => runSim();
 
 // @ts-ignore
 let intervalId = window.setInterval(intervalFunction, (1 / targetFPS) * 1000);
