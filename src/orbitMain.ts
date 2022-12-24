@@ -5,18 +5,22 @@ import { runOrbitSim } from "./orbitSim";
 import { calculateIntervalT } from "./softBodyFunctions/misc/misc";
 import earthTexturePath from "./assets/8k_earth_daymap.jpg";
 import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
+import fs from "fs";
+import { downloadFile } from "./orbitFunctions/misc/misc";
 
 let t = 0;
 let playing = false;
 let speed = 1;
 let targetFPS = 60;
-const speedOptions = [1, 100, 1000, 10000];
+const speedOptions = [1, 50, 100, 1000, 10000];
+let p: Float32Array;
 
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const nTimestep: number = oneYearInSeconds;
-const dt: number = 1; //in seconds
+const dt: number = 60; //in seconds
+const nTimestep: number = oneYearInSeconds / dt;
+console.log({ nTimestep });
 const satelliteM: number = 1;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
@@ -38,7 +42,7 @@ const axesHelper = new THREE.AxesHelper(0.3);
 
 scene.add(axesHelper);
 
-camera.position.set(1, 1, 1).setLength(1);
+camera.position.set(0, 1, 0).setLength(1);
 controls.update();
 
 const ambient = new THREE.AmbientLight(0xffffff, 0.2);
@@ -63,7 +67,7 @@ const updatePlanetPos = () => {
 
     if (i == trailsIndex) {
       const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.01),
+        new THREE.SphereGeometry(0.001),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
       );
 
@@ -147,7 +151,37 @@ const simulateButton = document.getElementById(
   "simulateButton"
 ) as HTMLButtonElement;
 
-// simulateButton.onclick = () => runSim();
+simulateButton.onclick = () => {
+  console.log("sim started");
+
+  p = runOrbitSim(nTimestep, dt, masses);
+
+  console.log("sim finished");
+};
+
+const saveSimDataButton = document.getElementById(
+  "saveSimButton"
+) as HTMLButtonElement;
+
+saveSimDataButton.onclick = () => {
+  if (p == null) {
+    console.log("no simulation data yet!");
+    return;
+  }
+  const indexToSaveDataFor = 0; //the satllite index in the simulation
+
+  let dataToSave: string = "";
+
+  for (let t = 0; t < nTimestep; t++) {
+    const stride = nMasses * 3 * t + indexToSaveDataFor * 3;
+    dataToSave += `${p[stride + 0]},${p[stride + 1]},${p[stride + 2]},`;
+  }
+  dataToSave = dataToSave.slice(0, -1);
+
+  console.log("downloading data...");
+  downloadFile("test.txt", dataToSave);
+  console.log("data finished downloading");
+};
 
 // @ts-ignore
 let intervalId = window.setInterval(intervalFunction, (1 / targetFPS) * 1000);
@@ -277,14 +311,6 @@ masses.push({
 moon.position.z = moonOrbitR * distanceScale;
 
 const nMasses = masses.length;
-
-console.log("started sim");
-
-console.log(masses);
-
-const p = runOrbitSim(nTimestep, dt, masses);
-
-console.log("stopped sim");
 
 const animate = async () => {
   renderer.render(scene, camera);
