@@ -2,10 +2,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { calculateGeostationaryOrbitVelocityAndRadius } from "./orbitFunctions/parameters";
 import { runOrbitSim } from "./orbitSim";
-import { calculateIntervalT } from "./softBodyFunctions/misc/misc";
 import earthTexturePath from "./assets/8k_earth_daymap.jpg";
 import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
-import fs from "fs";
 import { downloadFile } from "./orbitFunctions/misc/misc";
 
 let t = 0;
@@ -13,14 +11,17 @@ let playing = false;
 let speed = 1;
 let targetFPS = 60;
 const speedOptions = [1, 50, 100, 1000, 10000];
-let p: Float32Array;
+let satOrbitData: number[];
+let nSatDataPieces: number;
+let nTimestep: number;
+let massesData: number[];
 
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const dt: number = 60; //in seconds
-const nTimestep: number = oneYearInSeconds / dt;
-console.log({ nTimestep });
+const dt: number = 100; //in seconds
+const dtShadow: number = 1; //in seconds
+const simulationTime: number = oneDayInSeconds * 365;
 const satelliteM: number = 1;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
@@ -50,34 +51,44 @@ const ambient = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambient);
 
 const updatePlanetPos = () => {
-  const pt = p.slice(t * nMasses * 3, (t + 1) * nMasses * 3);
+  const satStride = t * nSatDataPieces;
 
-  const trailsIndex = 0;
+  let satX = satOrbitData[satStride + 0];
+  let satY = satOrbitData[satStride + 1];
+  let satZ = satOrbitData[satStride + 2];
+
+  satX *= distanceScale;
+  satY *= distanceScale;
+  satZ *= distanceScale;
+
+  satellite.position.set(satX, satY, satZ);
 
   for (let i = 0; i < nMasses; i++) {
-    const stride = i * 3;
+    const stride = nMasses * 7 * t + i * 7;
 
-    let x = pt[stride + 0];
-    let y = pt[stride + 1];
-    let z = pt[stride + 2];
+    let x = massesData[stride + 0];
+    let y = massesData[stride + 1];
+    let z = massesData[stride + 2];
 
     x *= distanceScale;
     y *= distanceScale;
     z *= distanceScale;
 
-    if (i == trailsIndex) {
-      const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.001),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
+    console.log(x, y, z);
 
-      sphere.position.set(x, y, z);
+    // if (i == trailsIndex) {
+    //   const sphere = new THREE.Mesh(
+    //     new THREE.SphereGeometry(0.001),
+    //     new THREE.MeshBasicMaterial({ color: 0xffffff })
+    //   );
 
-      scene.add(sphere);
-    }
+    //   sphere.position.set(x, y, z);
+
+    //   scene.add(sphere);
+    // }
     // console.log({ x, y, z });
 
-    masses[i].mesh.position.set(x, y, z);
+    massObjects[i].mesh.position.set(x, y, z);
   }
 };
 
@@ -86,20 +97,17 @@ const timestepSliderElement = document.getElementById(
 ) as HTMLInputElement;
 
 timestepSliderElement.min = "0";
-timestepSliderElement.value = t.toString();
-timestepSliderElement.max = (nTimestep - 1).toString();
+timestepSliderElement.value = "0";
 
 timestepSliderElement.oninput = (e) => {
   let slider = e.target as HTMLInputElement;
 
   const value = parseInt(slider.value);
 
-  if (value < p.length) {
-    t = value;
-    updatePlanetPos();
-    playing = false;
-    playButton.innerText = ">";
-  }
+  t = value;
+  updatePlanetPos();
+  playing = false;
+  playButton.innerText = ">";
 };
 
 const playButton = document.getElementById("playButton") as HTMLButtonElement;
@@ -154,7 +162,29 @@ const simulateButton = document.getElementById(
 simulateButton.onclick = () => {
   console.log("sim started");
 
-  p = runOrbitSim(nTimestep, dt, masses);
+  // console.log({
+  //   satP,
+  //   satV,
+  //   simulationTime,
+  //   dt,
+  //   dtShadow,
+  //   masses: massObjects,
+  // });
+
+  const orbitReturn = runOrbitSim(
+    satP,
+    satV,
+    simulationTime,
+    dt,
+    dtShadow,
+    massObjects
+  );
+
+  satOrbitData = orbitReturn.satOrbitData;
+  nSatDataPieces = orbitReturn.nSatDataPieces;
+  nTimestep = satOrbitData.length / nSatDataPieces;
+  massesData = orbitReturn.massesData;
+  timestepSliderElement.max = (satOrbitData.length / nSatDataPieces).toString();
 
   console.log("sim finished");
 };
@@ -164,23 +194,23 @@ const saveSimDataButton = document.getElementById(
 ) as HTMLButtonElement;
 
 saveSimDataButton.onclick = () => {
-  if (p == null) {
+  if (satOrbitData == null) {
     console.log("no simulation data yet!");
     return;
   }
-  const indexToSaveDataFor = 0; //the satllite index in the simulation
-
   let dataToSave: string = "";
 
   for (let t = 0; t < nTimestep; t++) {
-    const stride = nMasses * 3 * t + indexToSaveDataFor * 3;
-    dataToSave += `${p[stride + 0]},${p[stride + 1]},${p[stride + 2]},`;
+    const stride = t * nSatDataPieces;
+
+    for (let i = 0; i < nSatDataPieces; i++) {
+      dataToSave += `${satOrbitData[stride + i]},`;
+    }
   }
   dataToSave = dataToSave.slice(0, -1);
 
   console.log("downloading data...");
   downloadFile("test.txt", dataToSave);
-  console.log("data finished downloading");
 };
 
 // @ts-ignore
@@ -277,28 +307,28 @@ export interface mass {
   mesh: THREE.Mesh;
 }
 
-const masses: mass[] = [];
+const satP = [orbitRadius, 0, 0];
+const satV = [0, 0, orbitVelocity];
 
-//satellite
-console.log({ orbitRadius, orbitVelocity });
-masses.push({
-  x: orbitRadius,
+const massObjects: mass[] = [];
+
+//earth
+massObjects.push({
+  x: 0,
   y: 0,
   z: 0,
   vx: 0,
   vy: 0,
-  vz: orbitVelocity,
-  m: satelliteM,
-  mesh: satellite,
+  vz: 0,
+  m: earthM,
+  mesh: earth,
 });
-//earth
-masses.push({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, m: earthM, mesh: earth });
 
 //moon
 const moonOrbitR = 384400 * 1000;
 const moonOrbitV = 1.1 * 1000;
 const moonM = 7.34767309 * Math.pow(10, 22);
-masses.push({
+massObjects.push({
   x: 0,
   y: 0,
   z: moonOrbitR,
@@ -310,7 +340,7 @@ masses.push({
 });
 moon.position.z = moonOrbitR * distanceScale;
 
-const nMasses = masses.length;
+const nMasses = massObjects.length;
 
 const animate = async () => {
   renderer.render(scene, camera);

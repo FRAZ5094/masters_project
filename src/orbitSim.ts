@@ -2,91 +2,129 @@ import { orbitEuler } from "./orbitFunctions/integrators";
 import { mass } from "./orbitMain";
 import { round } from "./softBodyFunctions/misc/misc";
 
+interface runOrbitSimReturn {
+  satOrbitData: number[];
+  massesData: number[];
+  nSatDataPieces: number;
+}
+
 export const runOrbitSim = (
-  nTimestep: number,
+  satP: number[],
+  satV: number[],
+  simulationTime: number,
   dt: number,
-  masses: mass[]
-): Float32Array => {
-  const nMasses = masses.length;
+  dtShadow: number,
+  massObjects: mass[]
+): runOrbitSimReturn => {
+  //contains the pos and velocity of the satellite and filled with the intial pos and velocity
+  //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
+  const satOrbitData = [satP[0], satP[1], satP[2], satV[0], satV[1], satV[2]];
 
-  //contains the positions of all the masses in the simulation
-  const p = new Float32Array(nMasses * 3 * nTimestep);
-  //contains the velocity of all the masses for this timestep
-  const v = new Float32Array(nMasses * 3);
+  const nSatDataPieces = satOrbitData.length; //find's number of pieces of data stored for the satellite
 
-  //contains all the masses of the objects in the simulation
-  const massArray = new Float32Array(nMasses);
+  const massesData: number[] = [];
+
+  const nMasses = massObjects.length;
 
   for (let i = 0; i < nMasses; i++) {
-    const stride = i * 3;
-
-    p[stride + 0] = masses[i].x;
-    p[stride + 1] = masses[i].y;
-    p[stride + 2] = masses[i].z;
-
-    v[stride + 0] = masses[i].vx;
-    v[stride + 1] = masses[i].vy;
-    v[stride + 2] = masses[i].vz;
-
-    massArray[i] = masses[i].m;
+    massesData.push(massObjects[i].x);
+    massesData.push(massObjects[i].y);
+    massesData.push(massObjects[i].z);
+    massesData.push(massObjects[i].vx);
+    massesData.push(massObjects[i].vy);
+    massesData.push(massObjects[i].vz);
+    massesData.push(massObjects[i].m);
   }
 
-  const simLoopStartTime = performance.now();
+  let t = 0; //t starts at 1, and dt is added to t every step in the simulation, this is because dt varies
 
-  for (let t = 1; t < nTimestep; t++) {
-    if (t % (nTimestep / 100) == 0) {
-      const timeElapsed = performance.now() - simLoopStartTime;
+  let iTimestep = 1;
 
-      const estimatedTotalSimTime: number =
-        ((performance.now() - simLoopStartTime) / t) * nTimestep;
-      console.log(
-        "Simulation progress: " +
-          round((t / nTimestep) * 100, 0) +
-          "% " +
-          round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
-          " seconds left"
-      );
+  while (t < simulationTime) {
+    if (t % (simulationTime / 100) == 0) {
+      console.log(t / simulationTime);
+
+      // const timeElapsed = performance.now() - simLoopStartTime;
+
+      // const estimatedTotalSimTime: number =
+      //   ((performance.now() - simLoopStartTime) / t) * nTimestep;
+      // console.log(
+      //   "Simulation progress: " +
+      //     round((t / nTimestep) * 100, 0) +
+      //     "% " +
+      //     round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
+      //     " seconds left"
+      // );
     }
-    const ptOthers = p.slice((t - 1) * nMasses * 3, t * nMasses * 3);
+
+    //find the new pos and velocity of the satellite using the other masses
+    //picked out of the sateliteOrbitData
+
+    const massesDatat = massesData.slice(-(7 * nMasses));
+
+    // const satellitePrevStride = (iTimestep - 1) * nSatDataPieces;
+
+    const ptSat = satOrbitData.slice(-nSatDataPieces, -(nSatDataPieces - 3));
+    const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
+
+    const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
+      orbitEuler(ptSat, vtSat, massesDatat, dt, dtShadow);
+
+    satOrbitData.push(satNewPtX);
+    satOrbitData.push(satNewPtY);
+    satOrbitData.push(satNewPtZ);
+
+    satOrbitData.push(satNewVX);
+    satOrbitData.push(satNewVY);
+    satOrbitData.push(satNewVZ);
+
+    //find the new pos and velocity of the other masses
+    //taken from the otherMasses
+
     for (let i = 0; i < nMasses; i++) {
-      const stride = i * 3 + t * nMasses * 3;
-      const prevStride = stride - nMasses * 3;
-      const vStride = i * 3;
+      const stride = i * 7;
 
-      const pt = [p[prevStride + 0], p[prevStride + 1], p[prevStride + 2]];
+      const pt = [
+        massesDatat[stride + 0],
+        massesDatat[stride + 1],
+        massesDatat[stride + 2],
+      ];
+      t;
+      const vt = [
+        massesDatat[stride + 3],
+        massesDatat[stride + 4],
+        massesDatat[stride + 5],
+      ];
 
-      const vt = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
+      const m = massesData[stride + 6];
 
-      //if the object is the earth, it can't be effected by other the forces of other objects on it
-      if (i == 1) {
-        p[stride + 0] = pt[0];
-        p[stride + 1] = pt[1];
-        p[stride + 2] = pt[2];
+      let newPtX: number,
+        newPtY: number,
+        newPtZ: number,
+        newVX: number,
+        newVY: number,
+        newVZ: number,
+        integrationReturn: number[];
 
-        v[vStride + 0] = vt[0];
-        v[vStride + 1] = vt[1];
-        v[vStride + 2] = vt[2];
-        continue;
+      if (i == 0) {
+        integrationReturn = pt.concat(vt);
+      } else {
+        integrationReturn = orbitEuler(pt, vt, massesDatat, dt, dtShadow);
       }
 
-      const [px_new, py_new, pz_new, vx_new, vy_new, vz_new] = orbitEuler(
-        pt,
-        vt,
-        ptOthers,
-        massArray,
-        dt
-      );
-      // console.log("calculated for i=", i);
+      massesData.push(integrationReturn[0]);
+      massesData.push(integrationReturn[1]);
+      massesData.push(integrationReturn[2]);
 
-      p[stride + 0] = px_new;
-      p[stride + 1] = py_new;
-      p[stride + 2] = pz_new;
+      massesData.push(integrationReturn[3]);
+      massesData.push(integrationReturn[4]);
+      massesData.push(integrationReturn[5]);
 
-      v[vStride + 0] = vx_new;
-      v[vStride + 1] = vy_new;
-      v[vStride + 2] = vz_new;
+      massesData.push(m);
     }
+    t += dt;
+    iTimestep += 1;
   }
 
-  return p;
+  return { satOrbitData, massesData, nSatDataPieces };
 };

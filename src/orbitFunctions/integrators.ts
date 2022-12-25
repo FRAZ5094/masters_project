@@ -3,11 +3,11 @@ import { gravitationalA } from "./forces/forces";
 export const orbitEuler = (
   pt: number[],
   vt: number[],
-  ptOthers: Float32Array,
-  massArray: Float32Array,
-  dt: number
+  massesData: number[],
+  dt: number,
+  dtShadow: number
 ): number[] => {
-  const a = orbitF(pt, ptOthers, massArray);
+  const a = orbitF(pt, massesData);
 
   vt[0] += a[0] * dt;
   vt[1] += a[1] * dt;
@@ -20,24 +20,20 @@ export const orbitEuler = (
   return [pt[0], pt[1], pt[2], vt[0], vt[1], vt[2]];
 };
 
-export const orbitF = (
-  pt: number[],
-  ptOthers: Float32Array,
-  massArray: Float32Array
-): number[] => {
+export const orbitF = (pt: number[], massesData: number[]): number[] => {
   const a = [0, 0, 0];
 
-  const nMasses = ptOthers.length / 3;
+  const nMasses = massesData.length / 7;
 
   for (let i = 0; i < nMasses; i++) {
-    const stride = i * 3;
+    const stride = i * 7;
 
     const ptOther = [
-      ptOthers[stride + 0],
-      ptOthers[stride + 1],
-      ptOthers[stride + 2],
+      massesData[stride + 0],
+      massesData[stride + 1],
+      massesData[stride + 2],
     ];
-    const mOther = massArray[i];
+    const mOther = massesData[stride + 6];
 
     const aGrav = gravitationalA(pt, ptOther, mOther);
 
