@@ -11,17 +11,17 @@ let playing = false;
 let speed = 1;
 let targetFPS = 60;
 const speedOptions = [1, 50, 100, 1000, 10000];
-let satOrbitData: number[];
-let nSatDataPieces: number;
-let nTimestep: number;
-let massesData: number[];
+let satOrbitData: number[] | null;
+let nSatDataPieces: number | null;
+let nTimestep: number | null;
+let massesData: number[] | null;
 
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
 const dt: number = 100; //in seconds
 const dtShadow: number = 1; //in seconds
-const simulationTime: number = oneDayInSeconds * 365;
+const simulationTime: number = oneYearInSeconds * 10;
 const satelliteM: number = 1;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
@@ -51,11 +51,11 @@ const ambient = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambient);
 
 const updatePlanetPos = () => {
-  const satStride = t * nSatDataPieces;
+  const satStride = t * nSatDataPieces!;
 
-  let satX = satOrbitData[satStride + 0];
-  let satY = satOrbitData[satStride + 1];
-  let satZ = satOrbitData[satStride + 2];
+  let satX = satOrbitData![satStride + 0];
+  let satY = satOrbitData![satStride + 1];
+  let satZ = satOrbitData![satStride + 2];
 
   satX *= distanceScale;
   satY *= distanceScale;
@@ -66,15 +66,13 @@ const updatePlanetPos = () => {
   for (let i = 0; i < nMasses; i++) {
     const stride = nMasses * 7 * t + i * 7;
 
-    let x = massesData[stride + 0];
-    let y = massesData[stride + 1];
-    let z = massesData[stride + 2];
+    let x = massesData![stride + 0];
+    let y = massesData![stride + 1];
+    let z = massesData![stride + 2];
 
     x *= distanceScale;
     y *= distanceScale;
     z *= distanceScale;
-
-    console.log(x, y, z);
 
     // if (i == trailsIndex) {
     //   const sphere = new THREE.Mesh(
@@ -147,7 +145,7 @@ for (let i = 0; i < speedOptions.length; i++) {
 
 const intervalFunction = () => {
   if (playing) {
-    if (t + speed < nTimestep) {
+    if (t + speed < nTimestep!) {
       t += speed;
       updatePlanetPos();
       timestepSliderElement.value = t.toString();
@@ -198,19 +196,47 @@ saveSimDataButton.onclick = () => {
     console.log("no simulation data yet!");
     return;
   }
-  let dataToSave: string = "";
 
-  for (let t = 0; t < nTimestep; t++) {
-    const stride = t * nSatDataPieces;
+  const baseFileName = window.prompt("What do you want to name the file");
 
-    for (let i = 0; i < nSatDataPieces; i++) {
-      dataToSave += `${satOrbitData[stride + i]},`;
+  if (baseFileName == null) {
+    //cancel button as pressed;
+    return;
+  }
+
+  let satDataToSave: string = "";
+
+  for (let t = 0; t < nTimestep!; t++) {
+    const stride = t * nSatDataPieces!;
+
+    for (let i = 0; i < nSatDataPieces!; i++) {
+      satDataToSave += `${satOrbitData[stride + i]},`;
     }
   }
-  dataToSave = dataToSave.slice(0, -1);
+  satDataToSave = satDataToSave.slice(0, -1);
 
   console.log("downloading data...");
-  downloadFile("test.txt", dataToSave);
+
+  const satFileName = "sat_" + baseFileName + "_" + Date.now() + ".txt";
+
+  downloadFile(satFileName, satDataToSave);
+};
+
+const clearSimDataButton = document.getElementById(
+  "clearSimDataButton"
+) as HTMLButtonElement;
+
+clearSimDataButton.onclick = () => {
+  const toClear = window.confirm(
+    "Are you sure you want to clear the sim data?"
+  );
+
+  if (toClear) {
+    satOrbitData = null;
+    nSatDataPieces = null;
+    nTimestep = null;
+    massesData = null;
+  }
 };
 
 // @ts-ignore
@@ -244,8 +270,8 @@ scene.add(earth);
 const d = earthR * distanceScale * 1;
 
 const satellite = new THREE.Mesh(
-  new THREE.SphereGeometry(d),
-  new THREE.MeshStandardMaterial({ color: 0x808080, side: THREE.DoubleSide })
+  new THREE.PlaneGeometry(d, d, 1, 1),
+  new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide })
 );
 
 satellite.castShadow = true;
@@ -264,11 +290,11 @@ sun.position.x += earthR * distanceScale * 50;
 
 scene.add(sun);
 
-const moonR = 1737.4 * 1000 * distanceScale;
+const moonR = 1737.4 * 1000;
 
 const moon = new THREE.Mesh(
-  new THREE.SphereGeometry(earthR * distanceScale),
-  new THREE.MeshStandardMaterial({ color: 0xff0000, side: THREE.DoubleSide })
+  new THREE.SphereGeometry(moonR * distanceScale),
+  new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
 );
 
 scene.add(moon);
@@ -290,6 +316,8 @@ const G = 6.6732 * Math.pow(10, -11);
 const { orbitRadius, orbitVelocity } =
   calculateGeostationaryOrbitVelocityAndRadius(earthT, earthM, G);
 
+console.log(orbitRadius);
+
 satellite.position.set(
   orbitRadius * distanceScale,
   0 * distanceScale,
@@ -297,6 +325,7 @@ satellite.position.set(
 );
 
 export interface mass {
+  name: string;
   x: number;
   y: number;
   z: number;
@@ -308,12 +337,12 @@ export interface mass {
 }
 
 const satP = [orbitRadius, 0, 0];
-const satV = [0, 0, orbitVelocity];
+const satV = [0, orbitVelocity, 0];
 
 const massObjects: mass[] = [];
 
-//earth
 massObjects.push({
+  name: "earth",
   x: 0,
   y: 0,
   z: 0,
@@ -324,16 +353,16 @@ massObjects.push({
   mesh: earth,
 });
 
-//moon
 const moonOrbitR = 384400 * 1000;
 const moonOrbitV = 1.1 * 1000;
 const moonM = 7.34767309 * Math.pow(10, 22);
 massObjects.push({
+  name: "moon",
   x: 0,
-  y: 0,
-  z: moonOrbitR,
-  vx: moonOrbitV,
-  vy: 0,
+  y: moonOrbitR,
+  z: 0,
+  vx: 0,
+  vy: moonOrbitV,
   vz: 0,
   m: moonM,
   mesh: moon,

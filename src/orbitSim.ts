@@ -18,7 +18,16 @@ export const runOrbitSim = (
 ): runOrbitSimReturn => {
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
-  const satOrbitData = [satP[0], satP[1], satP[2], satV[0], satV[1], satV[2]];
+  const t0 = 0; //time at the start of the simulation
+  const satOrbitData = [
+    satP[0],
+    satP[1],
+    satP[2],
+    satV[0],
+    satV[1],
+    satV[2],
+    t0,
+  ];
 
   const nSatDataPieces = satOrbitData.length; //find's number of pieces of data stored for the satellite
 
@@ -36,13 +45,13 @@ export const runOrbitSim = (
     massesData.push(massObjects[i].m);
   }
 
-  let t = 0; //t starts at 1, and dt is added to t every step in the simulation, this is because dt varies
+  let t = dt; //t starts at 1, and dt is added to t every step in the simulation, this is because dt varies
 
   let iTimestep = 1;
 
   while (t < simulationTime) {
     if (t % (simulationTime / 100) == 0) {
-      console.log(t / simulationTime);
+      console.log(round((t / simulationTime) * 100, 0) + "%");
 
       // const timeElapsed = performance.now() - simLoopStartTime;
 
@@ -77,6 +86,8 @@ export const runOrbitSim = (
     satOrbitData.push(satNewVX);
     satOrbitData.push(satNewVY);
     satOrbitData.push(satNewVZ);
+
+    satOrbitData.push(t);
 
     //find the new pos and velocity of the other masses
     //taken from the otherMasses
