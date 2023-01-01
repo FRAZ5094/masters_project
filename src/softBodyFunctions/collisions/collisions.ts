@@ -28,6 +28,7 @@ export const rayTriangleIntersection = (
   //Tc will be the c vertex of the triangle
 
   //can't be cached
+  //could be the light direction
   const rayDirX = p1[0] - p0[0];
   const rayDirY = p1[1] - p0[1];
   const rayDirZ = p1[2] - p0[2];
@@ -332,6 +333,7 @@ export const isSphereShadowingPoint = (
   c: number[],
   r: number
 ): boolean => {
+  //THIS FUNCTION DOESNT WORK!
   //use a point on the edge of the circle which is the cross section of the centre of the sphere
 
   //R NEEDS TO THE BE THE RADIUS OF THE PLANET NOT THE LIGHT SOURCE

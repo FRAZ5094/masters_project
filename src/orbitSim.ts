@@ -1,4 +1,8 @@
-import { orbitEuler } from "./orbitFunctions/integrators";
+import {
+  orbitExplicitEuler,
+  orbitRK4,
+  orbitSemiImplicitEuler,
+} from "./orbitFunctions/integrators";
 import { mass } from "./orbitMain";
 import { round } from "./softBodyFunctions/misc/misc";
 
@@ -13,7 +17,6 @@ export const runOrbitSim = (
   satV: number[],
   simulationTime: number,
   dt: number,
-  dtShadow: number,
   massObjects: mass[]
 ): runOrbitSimReturn => {
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
@@ -45,9 +48,10 @@ export const runOrbitSim = (
     massesData.push(massObjects[i].m);
   }
 
-  let t = dt; //t starts at 1, and dt is added to t every step in the simulation, this is because dt varies
-
+  let t = dt; //t starts at dt, and dt is added to t every step in the simulation, this is because dt varies
   let iTimestep = 1;
+
+  const integrator = orbitRK4;
 
   while (t < simulationTime) {
     if (t % (simulationTime / 100) == 0) {
@@ -77,7 +81,7 @@ export const runOrbitSim = (
     const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
 
     const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
-      orbitEuler(ptSat, vtSat, massesDatat, dt, dtShadow);
+      integrator(ptSat, vtSat, massesDatat, dt, true);
 
     satOrbitData.push(satNewPtX);
     satOrbitData.push(satNewPtY);
@@ -109,18 +113,12 @@ export const runOrbitSim = (
 
       const m = massesData[stride + 6];
 
-      let newPtX: number,
-        newPtY: number,
-        newPtZ: number,
-        newVX: number,
-        newVY: number,
-        newVZ: number,
-        integrationReturn: number[];
+      let integrationReturn: number[];
 
       if (i == 0) {
         integrationReturn = pt.concat(vt);
       } else {
-        integrationReturn = orbitEuler(pt, vt, massesDatat, dt, dtShadow);
+        integrationReturn = integrator(pt, vt, massesDatat, dt, false);
       }
 
       massesData.push(integrationReturn[0]);

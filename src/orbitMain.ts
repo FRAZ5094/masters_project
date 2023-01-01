@@ -19,8 +19,7 @@ let massesData: number[] | null;
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const dt: number = 100; //in seconds
-const dtShadow: number = 1; //in seconds
+const dt: number = 1200; //in seconds
 const simulationTime: number = oneYearInSeconds * 10;
 const satelliteM: number = 1;
 
@@ -36,6 +35,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
+// camera.up = new THREE.Vector3(0, 0, 1);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -43,7 +43,7 @@ const axesHelper = new THREE.AxesHelper(0.3);
 
 scene.add(axesHelper);
 
-camera.position.set(0, 1, 0).setLength(1);
+camera.position.set(0, 0, 1).setLength(1);
 controls.update();
 
 const ambient = new THREE.AmbientLight(0xffffff, 0.2);
@@ -62,6 +62,14 @@ const updatePlanetPos = () => {
   satZ *= distanceScale;
 
   satellite.position.set(satX, satY, satZ);
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.001),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+
+  sphere.position.set(satX, satY, satZ);
+
+  scene.add(sphere);
 
   for (let i = 0; i < nMasses; i++) {
     const stride = nMasses * 7 * t + i * 7;
@@ -169,14 +177,7 @@ simulateButton.onclick = () => {
   //   masses: massObjects,
   // });
 
-  const orbitReturn = runOrbitSim(
-    satP,
-    satV,
-    simulationTime,
-    dt,
-    dtShadow,
-    massObjects
-  );
+  const orbitReturn = runOrbitSim(satP, satV, simulationTime, dt, massObjects);
 
   satOrbitData = orbitReturn.satOrbitData;
   nSatDataPieces = orbitReturn.nSatDataPieces;
@@ -358,8 +359,8 @@ const moonOrbitV = 1.1 * 1000;
 const moonM = 7.34767309 * Math.pow(10, 22);
 massObjects.push({
   name: "moon",
-  x: 0,
-  y: moonOrbitR,
+  x: moonOrbitR,
+  y: 0,
   z: 0,
   vx: 0,
   vy: moonOrbitV,

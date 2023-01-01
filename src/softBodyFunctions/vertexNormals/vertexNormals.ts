@@ -1,9 +1,5 @@
 import { cross } from "../vector/vector";
 
-export const getNumberOfFaces = (nRows: number, nCols: number): number => {
-  return (2 * (nRows - 2) + 2) * (nCols - 1);
-};
-
 export const calculateSurfaceNormals = (
   vertexPosArray: Float32Array,
   triangleIndicesArray: Uint16Array
@@ -181,4 +177,8 @@ export const calculateVertexNormals = (
   }
 
   return vertexNormals;
+};
+
+export const getNumberOfFaces = (nRows: number, nCols: number): number => {
+  return (2 * (nRows - 2) + 2) * (nCols - 1);
 };

@@ -6,9 +6,9 @@ global x_0, m, c, k, dt
 
 x_0 = 1
 m = 1
-c = 1
-k = 1
-dt = 1
+c = 2
+k = 5
+dt = 0.1
 
 
 def v_func(x, v):
@@ -83,8 +83,20 @@ def euler(x, v):
 
     a = force/m
 
-    v += a * dt
-    x += v * dt
+    v_new = v + a * dt
+    x_new = x + v * dt
+
+    return x_new, v_new
+
+
+def euler_mod(x, v):
+
+    force = a_func(x, v)
+
+    a = force/m
+
+    v = v + a * dt
+    x = x + v * dt
 
     return x, v
 
@@ -104,8 +116,10 @@ x_rk4 = [x_0]
 x_rk4_naive = [x_0]
 x_rk4_mod = [x_0]
 x_euler = [x_0]
+x_euler_mod = [x_0]
 
 v_euler = 0
+v_euler_mod = 0
 v_rk4 = 0
 v_rk4_naive = 0
 v_rk4_mod = 0
@@ -116,6 +130,7 @@ time = np.arange(0, 10, dt)
 for _ in time[1::]:
     x_rk4_temp, v_rk4 = rk4(x_rk4[-1], v_rk4)
     x_euler_temp, v_euler = euler(x_euler[-1], v_euler)
+    x_euler_mod_temp, v_euler_mod = euler_mod(x_euler_mod[-1], v_euler_mod)
     x_rk4_naive_temp, v_rk4_naive = euler(x_rk4_naive[-1], v_rk4_naive)
     x_rk4_mod_temp, v_rk4_mod = rk4_mod(x_rk4_mod[-1], v_rk4_mod)
 
@@ -123,6 +138,7 @@ for _ in time[1::]:
     x_rk4_naive.append(x_rk4_naive_temp)
     x_rk4_mod.append(x_rk4_mod_temp)
     x_euler.append(x_euler_temp)
+    x_euler_mod.append(x_euler_mod_temp)
 
 
 print(findAveragePercentError(x_rk4_mod, x_rk4))
@@ -133,9 +149,10 @@ tf = ctl.TransferFunction([x_0 * m, x_0 * c], [m, c, k])
 T, exact_response = ctl.impulse_response(tf, T=time)
 
 plt.plot(time, x_euler, label="euler response")
-plt.plot(time, x_rk4, label="rk4 response")
-plt.plot(time, x_rk4_naive, label="rk4 naive response")
-plt.plot(time, x_rk4_mod, label="rk4 mod response")
+plt.plot(time, x_euler_mod, label="euler mod response")
+# plt.plot(time, x_rk4, label="rk4 response")
+# plt.plot(time, x_rk4_naive, label="rk4 naive response")
+# plt.plot(time, x_rk4_mod, label="rk4 mod response")
 plt.plot(time, exact_response, label="exact response")
 plt.legend()
 plt.show()

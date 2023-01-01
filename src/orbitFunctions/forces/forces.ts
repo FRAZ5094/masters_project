@@ -25,3 +25,30 @@ export const gravitationalA = (
 
   return [ax, ay, az];
 };
+
+export const solarRadiationA = (
+  satToSunRNormalised: number[],
+  areaExposedToSun: number,
+  mass: number,
+  reflectivity: number
+): number[] => {
+  //formula for Vallado p581
+
+  const SF = 1367; //W/m^2
+
+  const c = 299792458; //m/s
+
+  const p_srp = SF / c;
+
+  const ax =
+    -((p_srp * reflectivity * areaExposedToSun) / mass) *
+    satToSunRNormalised[0];
+  const ay =
+    -((p_srp * reflectivity * areaExposedToSun) / mass) *
+    satToSunRNormalised[1];
+  const az =
+    -((p_srp * reflectivity * areaExposedToSun) / mass) *
+    satToSunRNormalised[2];
+
+  return [ax, ay, az];
+};
