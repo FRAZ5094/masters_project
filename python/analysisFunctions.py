@@ -1,24 +1,29 @@
+from tqdm import tqdm
+
+
 def importOrbitData(fileName):
     with open("../simulationData/" + fileName) as f:
-        lines = f.readline()
+        fields = f.readline()
+        data = f.readline()
 
-    nSateliteDataPieces = 7
+    fields = fields.split("\n")[:-1]
 
-    data = lines.split(",")
+    fields = fields[0].split(",")[:-1]
 
-    nTimesteps = int(len(data)/nSateliteDataPieces)
+    nFields = len(fields)
+
+    data = data.split(",")
+
+    nTimesteps = int(len(data)/nFields)
 
     oneDayInSeconds = 60*60*24
 
     oneYearInSeconds = oneDayInSeconds * 365
 
-    x = []
-    y = []
-    z = []
-    vx = []
-    vy = []
-    vz = []
-    t = []
+    parsedData = {}
+
+    for i in range(nFields):
+        parsedData[fields[i]] = []
 
     firstDayI = -1
     firstYearI = -1
@@ -26,18 +31,12 @@ def importOrbitData(fileName):
     for i in tqdm(range(nTimesteps)):
 
         # if (i % 10 == 0):
-        stride = i * nSateliteDataPieces
-        x.append(float(data[stride + 0]))
-        y.append(float(data[stride + 1]))
-        z.append(float(data[stride + 2]))
-        vx.append(float(data[stride + 3]))
-        vy.append(float(data[stride + 4]))
-        vz.append(float(data[stride + 5]))
-        t.append(float(data[stride + 6]))
-        if (firstDayI == -1 and t[-1] >= oneDayInSeconds):
-            firstDayI = i
-            print("firstdayI set to: " + str(i))
-        if (firstYearI == -1 and t[-1] >= oneYearInSeconds):
-            firstYearI = i
+        stride = i * nFields
+        for j in range(nFields):
+            parsedData[fields[j]].append(data[stride + j])
 
-    return x, y, z, vx, vy, vz, t, firstDayI, firstYearI
+    return parsedData
+
+
+if __name__ == "__main__":
+    data = importOrbitData("sat_testtwolines_1672604163882.txt")

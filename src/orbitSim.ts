@@ -9,7 +9,7 @@ import { round } from "./softBodyFunctions/misc/misc";
 interface runOrbitSimReturn {
   satOrbitData: number[];
   massesData: number[];
-  nSatDataPieces: number;
+  satOrbitDataFields: string[];
 }
 
 export const runOrbitSim = (
@@ -31,6 +31,13 @@ export const runOrbitSim = (
     satV[2],
     t0,
   ];
+
+  const satOrbitDataFields: string[] = ["x", "y", "z", "vx", "vy", "vz", "t"];
+  const nFields = satOrbitDataFields.length;
+
+  if (nFields != satOrbitData.length) {
+    throw Error("satOrbitData names doesn't match saved data!");
+  }
 
   const nSatDataPieces = satOrbitData.length; //find's number of pieces of data stored for the satellite
 
@@ -70,18 +77,15 @@ export const runOrbitSim = (
       // );
     }
 
-    //find the new pos and velocity of the satellite using the other masses
-    //picked out of the sateliteOrbitData
-
     const massesDatat = massesData.slice(-(7 * nMasses));
-
-    // const satellitePrevStride = (iTimestep - 1) * nSatDataPieces;
 
     const ptSat = satOrbitData.slice(-nSatDataPieces, -(nSatDataPieces - 3));
     const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
 
     const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
       integrator(ptSat, vtSat, massesDatat, dt, true);
+
+    const prevSatOrbitDataLength = satOrbitData.length;
 
     satOrbitData.push(satNewPtX);
     satOrbitData.push(satNewPtY);
@@ -93,8 +97,11 @@ export const runOrbitSim = (
 
     satOrbitData.push(t);
 
-    //find the new pos and velocity of the other masses
-    //taken from the otherMasses
+    const newSatOrbitDataLength = satOrbitData.length;
+
+    if (newSatOrbitDataLength - prevSatOrbitDataLength != nFields) {
+      throw Error("Not pushing the correct amount of fields each time step");
+    }
 
     for (let i = 0; i < nMasses; i++) {
       const stride = i * 7;
@@ -135,5 +142,5 @@ export const runOrbitSim = (
     iTimestep += 1;
   }
 
-  return { satOrbitData, massesData, nSatDataPieces };
+  return { satOrbitData, massesData, satOrbitDataFields };
 };

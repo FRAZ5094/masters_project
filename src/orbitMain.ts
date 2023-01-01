@@ -12,7 +12,8 @@ let speed = 1;
 let targetFPS = 60;
 const speedOptions = [1, 50, 100, 1000, 10000];
 let satOrbitData: number[] | null;
-let nSatDataPieces: number | null;
+let satOrbitDataFields: string[] | null;
+let nDataFields: number | null;
 let nTimestep: number | null;
 let massesData: number[] | null;
 
@@ -20,7 +21,7 @@ const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
 const dt: number = 1200; //in seconds
-const simulationTime: number = oneYearInSeconds * 10;
+const simulationTime: number = 100 * dt;
 const satelliteM: number = 1;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
@@ -51,7 +52,7 @@ const ambient = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambient);
 
 const updatePlanetPos = () => {
-  const satStride = t * nSatDataPieces!;
+  const satStride = t * nDataFields!;
 
   let satX = satOrbitData![satStride + 0];
   let satY = satOrbitData![satStride + 1];
@@ -157,6 +158,8 @@ const intervalFunction = () => {
       t += speed;
       updatePlanetPos();
       timestepSliderElement.value = t.toString();
+      timeStepIText.innerHTML = `Time step index = ${t}`;
+      timeDisplayText.innerHTML = `Time from start of sim (s) = 0`;
     }
   }
 };
@@ -168,22 +171,14 @@ const simulateButton = document.getElementById(
 simulateButton.onclick = () => {
   console.log("sim started");
 
-  // console.log({
-  //   satP,
-  //   satV,
-  //   simulationTime,
-  //   dt,
-  //   dtShadow,
-  //   masses: massObjects,
-  // });
-
   const orbitReturn = runOrbitSim(satP, satV, simulationTime, dt, massObjects);
 
   satOrbitData = orbitReturn.satOrbitData;
-  nSatDataPieces = orbitReturn.nSatDataPieces;
-  nTimestep = satOrbitData.length / nSatDataPieces;
+  satOrbitDataFields = orbitReturn.satOrbitDataFields;
+  nDataFields = satOrbitDataFields.length;
+  nTimestep = satOrbitData.length / nDataFields;
   massesData = orbitReturn.massesData;
-  timestepSliderElement.max = (satOrbitData.length / nSatDataPieces).toString();
+  timestepSliderElement.max = (satOrbitData.length / nDataFields).toString();
 
   console.log("sim finished");
 };
@@ -207,10 +202,15 @@ saveSimDataButton.onclick = () => {
 
   let satDataToSave: string = "";
 
-  for (let t = 0; t < nTimestep!; t++) {
-    const stride = t * nSatDataPieces!;
+  for (let i = 0; i < nDataFields!; i++) {
+    satDataToSave += satOrbitDataFields![i] + ",";
+  }
+  satDataToSave += "\n";
 
-    for (let i = 0; i < nSatDataPieces!; i++) {
+  for (let t = 0; t < nTimestep!; t++) {
+    const stride = t * nDataFields!;
+
+    for (let i = 0; i < nDataFields!; i++) {
       satDataToSave += `${satOrbitData[stride + i]},`;
     }
   }
@@ -234,12 +234,14 @@ clearSimDataButton.onclick = () => {
 
   if (toClear) {
     satOrbitData = null;
-    nSatDataPieces = null;
+    nDataFields = null;
     nTimestep = null;
     massesData = null;
   }
 };
 
+const timeStepIText = document.getElementById("timeStepDisplay")!;
+const timeDisplayText = document.getElementById("timeDisplay")!;
 // @ts-ignore
 let intervalId = window.setInterval(intervalFunction, (1 / targetFPS) * 1000);
 
@@ -337,8 +339,8 @@ export interface mass {
   mesh: THREE.Mesh;
 }
 
-const satP = [orbitRadius, 0, 0];
-const satV = [0, orbitVelocity, 0];
+const satP = [-orbitRadius, -0.5 * orbitRadius, 0];
+const satV = [0, 0.1 * orbitVelocity, 0];
 
 const massObjects: mass[] = [];
 

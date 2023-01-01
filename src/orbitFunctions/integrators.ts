@@ -1,4 +1,5 @@
 import { gravitationalA, solarRadiationA } from "./forces/forces";
+import { orbitF } from "./orbitF";
 
 export const orbitExplicitEuler = (
   pt: number[],
@@ -96,66 +97,4 @@ export const orbitRK4 = (
   const vz_new = vt[2] + dt * (1 / 6) * (k1vz + 2 * k2vz + 2 * k3vz + k4vz);
 
   return [px_new, py_new, pz_new, vx_new, vy_new, vz_new];
-};
-
-export const orbitF = (
-  pt: number[],
-  massesData: number[],
-  isSat: boolean
-): number[] => {
-  const applyGravity = true;
-  const applySRP = false;
-  const applyShadow = false;
-
-  const a = [0, 0, 0];
-
-  //gravitational forces
-  if (applyGravity) {
-    const nMasses = massesData.length / 7;
-    for (let i = 0; i < nMasses; i++) {
-      const stride = i * 7;
-
-      const ptOther = [
-        massesData[stride + 0],
-        massesData[stride + 1],
-        massesData[stride + 2],
-      ];
-      const mOther = massesData[stride + 6];
-
-      const aGravity = gravitationalA(pt, ptOther, mOther);
-
-      a[0] += aGravity[0];
-      a[1] += aGravity[1];
-      a[2] += aGravity[2];
-    }
-  }
-
-  if (applySRP && isSat) {
-    const sunPos = [147.13 * Math.pow(10, 9), 0, 0];
-
-    const dx = sunPos[0] - pt[1];
-    const dy = sunPos[1] - pt[1];
-    const dz = sunPos[2] - pt[2];
-
-    const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-    const satToSunNormalized = [dx / mag, dy / mag, dz / mag];
-
-    const areaExposedToSun = 1;
-    const mass = 1.2; //using 1.2kg/m^2
-    const reflectivity = 0.993;
-
-    const aSrp = solarRadiationA(
-      satToSunNormalized,
-      areaExposedToSun,
-      mass,
-      reflectivity
-    );
-
-    a[0] += aSrp[0];
-    a[1] += aSrp[1];
-    a[2] += aSrp[2];
-  }
-
-  return a;
 };
