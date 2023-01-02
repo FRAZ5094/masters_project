@@ -26,6 +26,7 @@ let playing = false;
 
 const d = 1;
 const integrator: integrators = "rk4";
+const nTimestep: number = 1;
 
 let p: Float32Array;
 let nVertices: number;
@@ -35,7 +36,6 @@ let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 
 const simulationParams: SimulationParams = {
-  nTimestep: 200,
   d: 1,
   AM_ratio: 1,
   nWidthSegments: 20,
@@ -65,9 +65,10 @@ const xDepth = 1;
 const yDepth = 1;
 
 const runSim = async () => {
-  const vertexPosArray = geometry.attributes.position.array as Float32Array;
+  let p = geometry.attributes.position.array as Float32Array;
+  let v = new Float32Array(p.length);
 
-  nVertices = vertexPosArray.length / 3;
+  nVertices = p.length / 3;
 
   uaMagArray = new Float32Array(nVertices);
 
@@ -76,13 +77,7 @@ const runSim = async () => {
   nCols = simulationParams.nWidthSegments + 1;
   nRows = nCols;
 
-  const springArrays = getSpringIndicesArray(
-    vertexPosArray,
-    nRows,
-    nCols,
-    xDepth,
-    yDepth
-  );
+  const springArrays = getSpringIndicesArray(p, nRows, nCols, xDepth, yDepth);
 
   let springCount = 0;
 
@@ -92,7 +87,7 @@ const runSim = async () => {
 
   console.log("Number of springs: " + springCount);
 
-  timestepSliderElement.max = (simulationParams.nTimestep - 1).toString();
+  timestepSliderElement.max = (nTimestep - 1).toString();
 
   triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
 
@@ -102,14 +97,27 @@ const runSim = async () => {
     nCols
   );
 
-  p = simulate(
-    simulationParams,
-    vertexPosArray,
-    springArrays,
-    integrator,
-    trianglesAttachedToVertexArray,
-    triangleIndicesArray
-  );
+  const aMag = 0.1;
+
+  const lightDir = [0, 0, -1];
+
+  for (let t = 0; t < nTimestep; t++) {
+    const simReturn = simulate(
+      simulationParams,
+      p,
+      v,
+      aMag,
+      lightDir,
+      springArrays,
+      integrator,
+      trianglesAttachedToVertexArray,
+      triangleIndicesArray
+    );
+
+    p = simReturn.p_new;
+    v = simReturn.v_new;
+    console.log(simReturn.a);
+  }
 };
 
 const timestepSliderElement = document.getElementById(
@@ -242,7 +250,7 @@ const updateModel = (): void => {
 // @ts-ignore
 var intervalId = window.setInterval(function () {
   if (playing) {
-    if (t + speed < simulationParams.nTimestep) {
+    if (t + speed < nTimestep) {
       t += speed;
       updateModel();
       timestepSliderElement.value = t.toString();
@@ -329,7 +337,7 @@ document.addEventListener("keydown", (e: KeyboardEvent) => {
 
   // console.log(key);
 
-  if (key == "ArrowRight" && t < simulationParams.nTimestep) {
+  if (key == "ArrowRight" && t < nTimestep) {
     if (playing) playButton.click();
     t += 1;
     updateModel();

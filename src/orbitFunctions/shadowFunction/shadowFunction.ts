@@ -35,9 +35,9 @@ export const isSatelliteInCylindricalUmbra = (
     rLightZ
   );
 
-  return (
+  const val =
     rSatelliteX_rLight / rLightMag +
-      Math.sqrt(rSatelliteMagSquared - shadowingSphereR * shadowingSphereR) <=
-    0
-  );
+    Math.sqrt(rSatelliteMagSquared - shadowingSphereR * shadowingSphereR);
+
+  return val <= 0;
 };

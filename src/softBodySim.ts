@@ -18,7 +18,6 @@ import { round } from "./softBodyFunctions/misc/misc";
 export type integrators = "euler" | "rk4";
 
 export interface SimulationParams {
-  nTimestep: number;
   d: number;
   AM_ratio: number;
   nWidthSegments: number;
@@ -30,33 +29,48 @@ export interface SimulationParams {
   selfCollision: boolean;
 }
 
+export interface simulationReturn {
+  p_new: Float32Array;
+  v_new: Float32Array;
+  a: number[];
+}
+
+//globals in this file
 let selfShadowingCheck: boolean;
 let selfCollisionCheck: boolean;
 let lightForce: boolean;
 
 export const simulate = (
   simulationParams: SimulationParams,
-  initialVertexPosArray: Float32Array,
+  p: Float32Array,
+  v: Float32Array,
+  aMag: number,
+  lightDir: number[],
   springArrays: number[][][],
   integratorName: integrators,
   trianglesAttachedToVertexArray: number[][],
   triangleIndicesArray: Uint16Array
-): Float32Array => {
-  console.log("starting simulation");
-
+): simulationReturn => {
   let integrator;
 
   if (integratorName == "euler") integrator = euler;
   else if (integratorName == "rk4") integrator = rk4;
   else integrator = euler;
 
-  const nVertices = initialVertexPosArray.length / 3;
+  const nVertices = p.length / 3;
+
+  //split the accelerations evenly between all the vertices
+  const aVertMag = aMag / nVertices;
+
+  //will be used to store the new p and v
+  const p_new = new Float32Array(p.length);
+  const v_new = new Float32Array(p.length);
+  const a = [0, 0, 0];
 
   selfShadowingCheck = simulationParams.selfShadowing;
   selfCollisionCheck = simulationParams.selfCollision;
   lightForce = simulationParams.lightForce;
 
-  const nTimestep = simulationParams.nTimestep;
   const dt = simulationParams.dt;
   const k = simulationParams.k;
   const dampingRatio = simulationParams.dampingRatio;
@@ -66,174 +80,115 @@ export const simulate = (
     (simulationParams.d * simulationParams.d) / simulationParams.AM_ratio;
   const massP = mass / nVertices;
 
-  console.log(
-    "p will be " +
-      (Float32Array.BYTES_PER_ELEMENT * nTimestep * nVertices * 3) / 1000000 +
-      "mb"
+  const vertexNormals = calculateVertexNormals(
+    trianglesAttachedToVertexArray,
+    p
   );
 
-  console.log("Initializing memory");
-
-  console.time();
-
-  const v = new Float32Array(nVertices * 3);
-  const p = new Float32Array(nTimestep * nVertices * 3);
+  const surfaceNormalsArray = calculateSurfaceNormals(p, triangleIndicesArray);
 
   for (let i = 0; i < nVertices; i++) {
+    //stride value for this vertex at this timestep
     let stride = i * 3;
-    p[stride + 0] = initialVertexPosArray[stride + 0];
-    p[stride + 1] = initialVertexPosArray[stride + 1];
-    p[stride + 2] = initialVertexPosArray[stride + 2];
-  }
 
-  console.timeEnd();
-  console.log("Done initializing memory");
+    const x = p[stride + 0];
+    const y = p[stride + 1];
+    const z = p[stride + 2];
 
-  // main simulation loop
+    const vx = v[stride + 0];
+    const vy = v[stride + 1];
+    const vz = v[stride + 2];
 
-  console.log("Starting simulation loop");
-  console.time();
+    let nx = vertexNormals[stride + 0];
+    let ny = vertexNormals[stride + 1];
+    let nz = vertexNormals[stride + 2];
 
-  const simLoopStartTime = performance.now();
-
-  // loop over time steps
-  for (let t = 1; t < nTimestep; t++) {
-    if (t % (nTimestep / 100) == 0) {
-      const timeElapsed = performance.now() - simLoopStartTime;
-
-      const estimatedTotalSimTime: number =
-        ((performance.now() - simLoopStartTime) / t) * nTimestep;
-      console.log(
-        "Simulation progress: " +
-          round((t / nTimestep) * 100, 0) +
-          "% " +
-          round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
-          " seconds left"
-      );
-    }
-
-    const vertexPosArray = p.slice(nVertices * 3 * (t - 1), nVertices * 3 * t);
-
-    const vertexNormals = calculateVertexNormals(
-      trianglesAttachedToVertexArray,
-      vertexPosArray
+    let [x_new, y_new, z_new, vx_new, vy_new, vz_new, ax, ay, az] = integrator(
+      x,
+      y,
+      z,
+      vx,
+      vy,
+      vz,
+      aVertMag,
+      lightDir,
+      dt,
+      massP,
+      k,
+      springArrays[i],
+      dampingRatio,
+      p,
+      nx,
+      ny,
+      nz,
+      i,
+      p,
+      triangleIndicesArray,
+      surfaceNormalsArray
     );
 
-    const surfaceNormalsArray = calculateSurfaceNormals(
-      vertexPosArray,
-      triangleIndicesArray
-    );
+    a[0] += ax;
+    a[1] += ay;
+    a[2] += az;
 
-    for (let i = 0; i < nVertices; i++) {
-      //stride value for this vertex at this timestep
-      let stride = i * 3 + t * (nVertices * 3);
+    v_new[stride + 0] = vx_new;
+    v_new[stride + 1] = vy_new;
+    v_new[stride + 2] = vz_new;
 
-      //stride value for this vertex in the previous timestep
-      let previousStride = stride - nVertices * 3;
-
-      let vStride = i * 3; // stride different for v because its only stored for 1 timestep at a time
-
-      let x = p[previousStride + 0];
-      let y = p[previousStride + 1];
-      let z = p[previousStride + 2];
-
-      // if (i == Math.floor(nVertices / 2)) {
-      //   console.log({ x, y, z });
-      // }
-
-      let vx = v[vStride + 0];
-      let vy = v[vStride + 1];
-      let vz = v[vStride + 2];
-
-      let nx = vertexNormals[i * 3 + 0];
-      let ny = vertexNormals[i * 3 + 1];
-      let nz = vertexNormals[i * 3 + 2];
-
-      let [x_new, y_new, z_new, vx_new, vy_new, vz_new] = integrator(
-        x,
-        y,
-        z,
-        vx,
-        vy,
-        vz,
-        t,
-        dt,
-        massP,
-        k,
-        springArrays[i],
-        dampingRatio,
-        nVertices,
-        p,
-        nx,
-        ny,
-        nz,
-        i,
-        vertexPosArray,
-        triangleIndicesArray,
-        surfaceNormalsArray
-      );
-
-      v[vStride + 0] = vx_new;
-      v[vStride + 1] = vy_new;
-      v[vStride + 2] = vz_new;
-
-      p[stride + 0] = x_new;
-      p[stride + 1] = y_new;
-      p[stride + 2] = z_new;
-    }
-
-    if (selfCollisionCheck) {
-      for (let i = 0; i < nVertices; i++) {
-        //stride value for this vertex at this timestep
-        let stride = i * 3 + t * (nVertices * 3);
-
-        //stride value for this vertex in the previous timestep
-        let previousStride = stride - nVertices * 3;
-
-        const p_old = [
-          p[previousStride + 0],
-          p[previousStride + 1],
-          p[previousStride + 2],
-        ];
-        const p_new = [p[stride + 0], p[stride + 1], p[stride + 2]];
-
-        const res = vertexWillSelfCollide(
-          i,
-          p_old,
-          p_new,
-          vertexPosArray,
-          triangleIndicesArray,
-          surfaceNormalsArray
-        );
-
-        if (res.intersected) {
-          console.log("intersection", t);
-          const vStride = i * 3;
-          const v_new = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
-          const [x_new, y_new, z_new, vx_new, vy_new, vz_new] =
-            particleTriangleCollisionResolution(
-              res.I!,
-              p_old,
-              p_new,
-              v_new,
-              res.n!
-            );
-
-          v[vStride + 0] = vx_new;
-          v[vStride + 1] = vy_new;
-          v[vStride + 2] = vz_new;
-
-          p[stride + 0] = x_new;
-          p[stride + 1] = y_new;
-          p[stride + 2] = z_new;
-        }
-      }
-    }
+    p_new[stride + 0] = x_new;
+    p_new[stride + 1] = y_new;
+    p_new[stride + 2] = z_new;
   }
-  console.log("Finished simulation loop");
-  console.timeEnd();
 
-  return p;
+  // if (selfCollisionCheck) {
+  //   for (let i = 0; i < nVertices; i++) {
+  //     //stride value for this vertex at this timestep
+  //     let stride = i * 3;
+
+  //     //stride value for this vertex in the previous timestep
+  //     let previousStride = stride - nVertices * 3;
+
+  //     const p_old = [
+  //       p[previousStride + 0],
+  //       p[previousStride + 1],
+  //       p[previousStride + 2],
+  //     ];
+  //     const p_new = [p[stride + 0], p[stride + 1], p[stride + 2]];
+
+  //     const res = vertexWillSelfCollide(
+  //       i,
+  //       p_old,
+  //       p_new,
+  //       p,
+  //       triangleIndicesArray,
+  //       surfaceNormalsArray
+  //     );
+
+  //     if (res.intersected) {
+  //       console.log("intersection", t);
+  //       const vStride = i * 3;
+  //       const v_new = [v[vStride + 0], v[vStride + 1], v[vStride + 2]];
+  //       const [x_new, y_new, z_new, vx_new, vy_new, vz_new] =
+  //         particleTriangleCollisionResolution(
+  //           res.I!,
+  //           p_old,
+  //           p_new,
+  //           v_new,
+  //           res.n!
+  //         );
+
+  //       v[vStride + 0] = vx_new;
+  //       v[vStride + 1] = vy_new;
+  //       v[vStride + 2] = vz_new;
+
+  //       p[stride + 0] = x_new;
+  //       p[stride + 1] = y_new;
+  //       p[stride + 2] = z_new;
+  //     }
+  //   }
+  // }
+
+  return { p_new, v_new, a };
 };
 
 export const f = (
@@ -243,11 +198,11 @@ export const f = (
   vx: number,
   vy: number,
   vz: number,
-  t: number,
+  aVertMag: number,
+  lightDir: number[],
   k: number,
   springArray: number[][],
   dampingRatio: number,
-  nVertices: number,
   p: Float32Array,
   mass: number,
   nx: number,
@@ -262,17 +217,6 @@ export const f = (
   let fy = 0;
   let fz = 0;
 
-  const light = {
-    x: 0.5,
-    y: 0,
-    z: 0.01,
-    r: 0.5,
-    dirX: 0.707,
-    dirY: 0,
-    dirZ: -0.707,
-    mag: 10 / nVertices,
-  };
-
   const nSprings = springArray.length;
 
   //for each spring attached to the vertex
@@ -281,7 +225,7 @@ export const f = (
     let otherIndex = springData[0];
     let springL = springData[1];
 
-    let otherStride = otherIndex * 3 + (t - 1) * nVertices * 3;
+    let otherStride = otherIndex * 3;
 
     let x_other = p[otherStride + 0];
     let y_other = p[otherStride + 1];
@@ -314,54 +258,35 @@ export const f = (
   fy += fDamperY;
   fz += fDamperZ;
 
-  // if (vertexIndex == 0) {
-  //   fy += -0.5;
-  //   fx += 0.5;
-  //   if (t < 20) {
-  //     fz += 0.5;
-  //   } else {
-  //     fz -= 0.5;
-  //   }
-  // }
+  //place light source 100m away from the vertex
+  const l = 100;
 
-  // } else if (vertexIndex == nVertices - 1) {
-  //   fy += 0.5;
-  //   fx += -0.5;
-  //   fz += 0.5;
-  // }
-
-  //finding out if the vertex is in the light
+  const lightX = x - l * lightDir[0];
+  const lightY = y - l * lightDir[1];
+  const lightZ = z - l * lightDir[2];
 
   if (lightForce) {
+    let applyLightForce = true;
     if (
-      vertexIsInLight([x, y, z], [light.x, light.y, light.z], light.r, [
-        light.dirX,
-        light.dirY,
-        light.dirZ,
-      ])
+      selfShadowingCheck &&
+      isVertexSelfShadowed(
+        vertexIndex,
+        [lightX, lightY, lightZ],
+        vertexPosArray,
+        triangleIndicesArray,
+        surfaceNormalsArray
+      )
     ) {
-      let applyLightForce = true;
-      if (
-        selfShadowingCheck &&
-        isVertexSelfShadowed(
-          vertexIndex,
-          [light.x, light.y, light.z],
-          vertexPosArray,
-          triangleIndicesArray,
-          surfaceNormalsArray
-        )
-      ) {
-        applyLightForce = false;
-      }
+      applyLightForce = false;
+    }
 
-      if (applyLightForce) {
-        const scale = Math.abs(
-          dot(light.dirX, light.dirY, light.dirZ, nx, ny, nz)
-        );
-        fx += light.mag * scale * light.dirX;
-        fy += light.mag * scale * light.dirY;
-        fz += light.mag * scale * light.dirZ;
-      }
+    if (applyLightForce) {
+      const scale = Math.abs(
+        dot(lightDir[0], lightDir[1], lightDir[2], nx, ny, nz)
+      );
+      fx += aVertMag * scale * lightDir[0];
+      fy += aVertMag * scale * lightDir[1];
+      fz += aVertMag * scale * lightDir[2];
     }
   }
 
@@ -379,13 +304,13 @@ export const euler = (
   vx: number,
   vy: number,
   vz: number,
-  t: number,
+  aVertMag: number,
+  lightDir: number[],
   dt: number,
   massP: number,
   k: number,
   springArray: number[][],
   dampingRatio: number,
-  nVertices: number,
   p: Float32Array,
   nx: number,
   ny: number,
@@ -395,6 +320,7 @@ export const euler = (
   triangleIndicesArray: Uint16Array,
   surfaceNormalsArray: Float32Array
 ): number[] => {
+  //this is semi-implicit euler
   const [ax, ay, az] = f(
     x,
     y,
@@ -402,11 +328,11 @@ export const euler = (
     vx,
     vy,
     vz,
-    t,
+    aVertMag,
+    lightDir,
     k,
     springArray,
     dampingRatio,
-    nVertices,
     p,
     massP,
     nx,
@@ -426,7 +352,7 @@ export const euler = (
   let y_new = y + vy_new * dt;
   let z_new = z + vz_new * dt;
 
-  return [x_new, y_new, z_new, vx_new, vy_new, vz_new];
+  return [x_new, y_new, z_new, vx_new, vy_new, vz_new, ax, ay, az];
 };
 
 export const rk4 = (
@@ -436,13 +362,13 @@ export const rk4 = (
   vx: number,
   vy: number,
   vz: number,
-  t: number,
+  aVertMag: number,
+  lightDir: number[],
   dt: number,
   massP: number,
   k: number,
   springArray: number[][],
   dampingRatio: number,
-  nVertices: number,
   p: Float32Array,
   nx: number,
   ny: number,
@@ -459,11 +385,11 @@ export const rk4 = (
     vx,
     vy,
     vz,
-    t,
+    aVertMag,
+    lightDir,
     k,
     springArray,
     dampingRatio,
-    nVertices,
     p,
     massP,
     nx,
@@ -486,11 +412,11 @@ export const rk4 = (
     vx + dt * (k1vx / 2),
     vy + dt * (k1vy / 2),
     vz + dt * (k1vz / 2),
-    t,
+    aVertMag,
+    lightDir,
     k,
     springArray,
     dampingRatio,
-    nVertices,
     p,
     massP,
     nx,
@@ -513,11 +439,11 @@ export const rk4 = (
     vx + dt * (k2vx / 2),
     vy + dt * (k2vy / 2),
     vz + dt * (k2vz / 2),
-    t,
+    aVertMag,
+    lightDir,
     k,
     springArray,
     dampingRatio,
-    nVertices,
     p,
     massP,
     nx,
@@ -540,11 +466,11 @@ export const rk4 = (
     vx + dt * k3vx,
     vy + dt * k3vy,
     vz + dt * k3vz,
-    t,
+    aVertMag,
+    lightDir,
     k,
     springArray,
     dampingRatio,
-    nVertices,
     p,
     massP,
     nx,
@@ -560,13 +486,17 @@ export const rk4 = (
   const k4y = vy + dt * k3vy;
   const k4z = vz + dt * k3vz;
 
-  vx += (dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)) / 6;
-  vy += (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
-  vz += (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
+  const ax = (dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)) / 6;
+  const ay = (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
+  const az = (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
+
+  vx += ax;
+  vy += ay;
+  vz += az;
 
   x += (dt * (k1x + 2 * k2x + 2 * k3x + k4x)) / 6;
   y += (dt * (k1y + 2 * k2y + 2 * k3y + k4y)) / 6;
   z += (dt * (k1z + 2 * k2z + 2 * k3z + k4z)) / 6;
 
-  return [x, y, z, vx, vy, vz];
+  return [x, y, z, vx, vy, vz, ax, ay, az];
 };
