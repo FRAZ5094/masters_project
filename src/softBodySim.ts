@@ -22,6 +22,7 @@ export interface SimulationParams {
   AM_ratio: number;
   nWidthSegments: number;
   k: number;
+  integrator: integrators;
   dampingRatio: number;
   dt: number;
   lightForce: boolean;
@@ -47,14 +48,13 @@ export const simulate = (
   aMag: number,
   lightDir: number[],
   springArrays: number[][][],
-  integratorName: integrators,
   trianglesAttachedToVertexArray: number[][],
   triangleIndicesArray: Uint16Array
 ): simulationReturn => {
   let integrator;
 
-  if (integratorName == "euler") integrator = euler;
-  else if (integratorName == "rk4") integrator = rk4;
+  if (simulationParams.integrator == "euler") integrator = euler;
+  else if (simulationParams.integrator == "rk4") integrator = rk4;
   else integrator = euler;
 
   const nVertices = p.length / 3;
@@ -265,6 +265,10 @@ export const f = (
   const lightY = y - l * lightDir[1];
   const lightZ = z - l * lightDir[2];
 
+  let aLightX = 0;
+  let aLightY = 0;
+  let aLightZ = 0;
+
   if (lightForce) {
     let applyLightForce = true;
     if (
@@ -284,9 +288,12 @@ export const f = (
       const scale = Math.abs(
         dot(lightDir[0], lightDir[1], lightDir[2], nx, ny, nz)
       );
-      fx += aVertMag * scale * lightDir[0];
-      fy += aVertMag * scale * lightDir[1];
-      fz += aVertMag * scale * lightDir[2];
+      aLightX = aVertMag * scale * lightDir[0];
+      aLightY = aVertMag * scale * lightDir[1];
+      aLightZ = aVertMag * scale * lightDir[2];
+      fx += aLightX * mass;
+      fy += aLightY * mass;
+      fz += aLightZ * mass;
     }
   }
 
@@ -294,7 +301,7 @@ export const f = (
   const ay = fy / mass;
   const az = fz / mass;
 
-  return [ax, ay, az];
+  return [ax, ay, az, aLightX, aLightY, aLightZ];
 };
 
 export const euler = (
@@ -321,7 +328,7 @@ export const euler = (
   surfaceNormalsArray: Float32Array
 ): number[] => {
   //this is semi-implicit euler
-  const [ax, ay, az] = f(
+  const [ax, ay, az, aLightX, aLightY, aLightZ] = f(
     x,
     y,
     z,
@@ -352,7 +359,19 @@ export const euler = (
   let y_new = y + vy_new * dt;
   let z_new = z + vz_new * dt;
 
-  return [x_new, y_new, z_new, vx_new, vy_new, vz_new, ax, ay, az];
+  //need to multiply the aLight by dt so that it is correct acceleration for the step size, based on how euler method handles this
+
+  return [
+    x_new,
+    y_new,
+    z_new,
+    vx_new,
+    vy_new,
+    vz_new,
+    aLightX * dt,
+    aLightY * dt,
+    aLightZ * dt,
+  ];
 };
 
 export const rk4 = (
@@ -378,7 +397,7 @@ export const rk4 = (
   triangleIndicesArray: Uint16Array,
   surfaceNormalsArray: Float32Array
 ): number[] => {
-  const [k1vx, k1vy, k1vz] = f(
+  const [k1vx, k1vy, k1vz, k1ALightX, k1ALightY, k1ALightZ] = f(
     x,
     y,
     z,
@@ -405,7 +424,7 @@ export const rk4 = (
   const k1y = vy;
   const k1z = vz;
 
-  const [k2vx, k2vy, k2vz] = f(
+  const [k2vx, k2vy, k2vz, k2ALightX, k2ALightY, k2ALightZ] = f(
     x + dt * (k1x / 2),
     y + dt * (k1y / 2),
     z + dt * (k1z / 2),
@@ -432,7 +451,7 @@ export const rk4 = (
   const k2y = vy + dt * (k1vy / 2);
   const k2z = vz + dt * (k1vz / 2);
 
-  const [k3vx, k3vy, k3vz] = f(
+  const [k3vx, k3vy, k3vz, k3ALightX, k3ALightY, k3ALightZ] = f(
     x + dt * (k2x / 2),
     y + dt * (k2y / 2),
     z + dt * (k2z / 2),
@@ -459,7 +478,7 @@ export const rk4 = (
   const k3y = vy + dt * (k2vy / 2);
   const k3z = vz + dt * (k2vz / 2);
 
-  const [k4vx, k4vy, k4vz] = f(
+  const [k4vx, k4vy, k4vz, k4ALightX, k4ALightY, k4ALightZ] = f(
     x + dt * k3x,
     y + dt * k3y,
     z + dt * k3z,
@@ -486,17 +505,20 @@ export const rk4 = (
   const k4y = vy + dt * k3vy;
   const k4z = vz + dt * k3vz;
 
-  const ax = (dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)) / 6;
-  const ay = (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
-  const az = (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
+  vx += (dt * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)) / 6;
+  vy += (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
+  vz += (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
 
-  vx += ax;
-  vy += ay;
-  vz += az;
+  const aLightX =
+    (dt * (k1ALightX + 2 * k2ALightX + 2 * k3ALightX + k4ALightX)) / 6;
+  const aLightY =
+    (dt * (k1ALightY + 2 * k2ALightY + 2 * k3ALightY + k4ALightY)) / 6;
+  const aLightZ =
+    (dt * (k1ALightZ + 2 * k2ALightZ + 2 * k3ALightZ + k4ALightZ)) / 6;
 
   x += (dt * (k1x + 2 * k2x + 2 * k3x + k4x)) / 6;
   y += (dt * (k1y + 2 * k2y + 2 * k3y + k4y)) / 6;
   z += (dt * (k1z + 2 * k2z + 2 * k3z + k4z)) / 6;
 
-  return [x, y, z, vx, vy, vz, ax, ay, az];
+  return [x, y, z, vx, vy, vz, aLightX, aLightY, aLightZ];
 };

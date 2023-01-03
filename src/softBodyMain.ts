@@ -25,7 +25,6 @@ let speed = 1;
 let playing = false;
 
 const d = 1;
-const integrator: integrators = "rk4";
 const nTimestep: number = 1;
 
 let p: Float32Array;
@@ -38,10 +37,11 @@ let trianglesAttachedToVertexArray: number[][];
 const simulationParams: SimulationParams = {
   d: 1,
   AM_ratio: 1,
-  nWidthSegments: 20,
-  k: 1,
+  nWidthSegments: 4,
+  k: 0,
   dampingRatio: 0.1,
-  dt: 0.01,
+  dt: 1,
+  integrator: "rk4",
   lightForce: true,
   selfShadowing: false,
   selfCollision: false,
@@ -97,7 +97,7 @@ const runSim = async () => {
     nCols
   );
 
-  const aMag = 0.1;
+  const aMag = 1;
 
   const lightDir = [0, 0, -1];
 
@@ -109,14 +109,13 @@ const runSim = async () => {
       aMag,
       lightDir,
       springArrays,
-      integrator,
       trianglesAttachedToVertexArray,
       triangleIndicesArray
     );
 
     p = simReturn.p_new;
     v = simReturn.v_new;
-    console.log(simReturn.a);
+    const returnA = simReturn.a;
   }
 };
 
