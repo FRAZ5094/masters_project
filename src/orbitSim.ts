@@ -17,7 +17,8 @@ export const runOrbitSim = (
   satV: number[],
   simulationTime: number,
   dt: number,
-  massObjects: mass[]
+  massObjects: mass[],
+  saveInterval: number
 ): runOrbitSimReturn => {
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
@@ -60,48 +61,50 @@ export const runOrbitSim = (
 
   const integrator = orbitRK4;
 
+  const ptSat: number[] = [satP[0], satP[1], satP[2]];
+  const vtSat: number[] = [satV[0], satV[1], satV[2]];
+
   while (t < simulationTime) {
     if (t % (simulationTime / 100) == 0) {
       console.log(round((t / simulationTime) * 100, 0) + "%");
-
-      // const timeElapsed = performance.now() - simLoopStartTime;
-
-      // const estimatedTotalSimTime: number =
-      //   ((performance.now() - simLoopStartTime) / t) * nTimestep;
-      // console.log(
-      //   "Simulation progress: " +
-      //     round((t / nTimestep) * 100, 0) +
-      //     "% " +
-      //     round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
-      //     " seconds left"
-      // );
     }
 
     const massesDatat = massesData.slice(-(7 * nMasses));
 
-    const ptSat = satOrbitData.slice(-nSatDataPieces, -(nSatDataPieces - 3));
-    const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
+    // const ptSat = satOrbitData.slice(-nSatDataPieces, -(nSatDataPieces - 3));
+    // const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
 
     const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
       integrator(ptSat, vtSat, massesDatat, dt, true);
 
     const prevSatOrbitDataLength = satOrbitData.length;
 
-    satOrbitData.push(satNewPtX);
-    satOrbitData.push(satNewPtY);
-    satOrbitData.push(satNewPtZ);
+    //only save the values to the array every saveInterval number of time steps
+    if (iTimestep % saveInterval == 0) {
+      satOrbitData.push(satNewPtX);
+      satOrbitData.push(satNewPtY);
+      satOrbitData.push(satNewPtZ);
 
-    satOrbitData.push(satNewVX);
-    satOrbitData.push(satNewVY);
-    satOrbitData.push(satNewVZ);
+      satOrbitData.push(satNewVX);
+      satOrbitData.push(satNewVY);
+      satOrbitData.push(satNewVZ);
 
-    satOrbitData.push(t);
+      satOrbitData.push(t);
 
-    const newSatOrbitDataLength = satOrbitData.length;
+      const newSatOrbitDataLength = satOrbitData.length;
 
-    if (newSatOrbitDataLength - prevSatOrbitDataLength != nFields) {
-      throw Error("Not pushing the correct amount of fields each time step");
+      if (newSatOrbitDataLength - prevSatOrbitDataLength != nFields) {
+        throw Error("Not pushing the correct amount of fields each time step");
+      }
     }
+
+    ptSat[0] = satNewPtX;
+    ptSat[1] = satNewPtY;
+    ptSat[2] = satNewPtZ;
+
+    vtSat[0] = satNewVX;
+    vtSat[1] = satNewVY;
+    vtSat[2] = satNewVZ;
 
     for (let i = 0; i < nMasses; i++) {
       const stride = i * 7;

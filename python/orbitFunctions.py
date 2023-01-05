@@ -14,7 +14,7 @@ def dot(x1, y1, z1, x2, y2, z2):
     return x1*x2 + y1*y2 + z1*z2
 
 
-def calculateKeplerElements(x, y, z, vx, vy, vz, planetM):
+def calculateKeplerElements(x, y, z, vx, vy, vz):
 
     h = cross(x, y, z, vx, vy, vz)
 
@@ -23,6 +23,8 @@ def calculateKeplerElements(x, y, z, vx, vy, vz, planetM):
     n = cross(K[0], K[1], K[2], h[0], h[1], h[2])
 
     G = 6.6743 * 10**-11
+
+    planetM = 5.972 * 10**24
 
     mu = planetM * G
 

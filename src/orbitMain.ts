@@ -20,9 +20,12 @@ let massesData: number[] | null;
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const dt: number = 1200; //in seconds
-const simulationTime: number = 100 * dt;
+const dt: number = 30; //in seconds
+const simulationTime: number = oneYearInSeconds * 5;
+const saveInterval: number = 1000;
 const satelliteM: number = 1;
+
+const estimatedNTimesteps = simulationTime / dt;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
@@ -36,7 +39,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-// camera.up = new THREE.Vector3(0, 0, 1);
+camera.up = new THREE.Vector3(0, 0, 1);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -171,7 +174,14 @@ const simulateButton = document.getElementById(
 simulateButton.onclick = () => {
   console.log("sim started");
 
-  const orbitReturn = runOrbitSim(satP, satV, simulationTime, dt, massObjects);
+  const orbitReturn = runOrbitSim(
+    satP,
+    satV,
+    simulationTime,
+    dt,
+    massObjects,
+    saveInterval
+  );
 
   satOrbitData = orbitReturn.satOrbitData;
   satOrbitDataFields = orbitReturn.satOrbitDataFields;
@@ -265,6 +275,8 @@ const earth = new THREE.Mesh(
   })
 );
 
+earth.rotateX(Math.PI / 2);
+
 earth.castShadow = true;
 earth.receiveShadow = true;
 
@@ -279,6 +291,8 @@ const satellite = new THREE.Mesh(
 
 satellite.castShadow = true;
 satellite.receiveShadow = true;
+
+satellite.rotateY(Math.PI / 2);
 
 scene.add(satellite);
 
@@ -339,8 +353,8 @@ export interface mass {
   mesh: THREE.Mesh;
 }
 
-const satP = [-orbitRadius, -0.5 * orbitRadius, 0];
-const satV = [0, 0.1 * orbitVelocity, 0];
+const satP = [orbitRadius, 0, 0];
+const satV = [0, orbitVelocity, 0];
 
 const massObjects: mass[] = [];
 

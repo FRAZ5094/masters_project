@@ -6,7 +6,7 @@ export const orbitF = (
   massesData: number[],
   isSat: boolean
 ): number[] => {
-  let applyGravity = false;
+  let applyGravity = true;
   let applySRP = true;
   let applyShadow = true;
 
@@ -48,16 +48,13 @@ export const orbitF = (
 
     const satToSunNormalized = [dx / mag, dy / mag, dz / mag];
 
-    const areaExposedToSun = 1;
-    const mass = 1.2; //using 1.2kg/m^2
+    const AM_ratio = 5;
+
+    const area = 1;
+    const mass = area / AM_ratio;
     const reflectivity = 0.993;
 
-    const aSrp = solarRadiationA(
-      satToSunNormalized,
-      areaExposedToSun,
-      mass,
-      reflectivity
-    );
+    const aSrp = solarRadiationA(satToSunNormalized, area, mass, reflectivity);
 
     a[0] += aSrp[0];
     a[1] += aSrp[1];
