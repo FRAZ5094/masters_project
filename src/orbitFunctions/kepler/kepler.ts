@@ -87,3 +87,75 @@ export const rvToKeplerOrbitalElements = (
 
   return { e, a, i, Omega, omega, trueAnomaly };
 };
+
+export interface keplerOrbitalElementsToRVReturn {
+  r: number[];
+  vel: number[];
+}
+
+export const keplerOrbitalElementsToRV = (
+  a: number,
+  e: number,
+  i: number,
+  Omega: number,
+  omega: number,
+  v: number,
+  planetM: number
+): keplerOrbitalElementsToRVReturn => {
+  // Vallado p114
+  const p = a * (1 - Math.pow(e, 2));
+
+  //Vallado p116
+
+  const cosV = Math.cos(v);
+  const sinV = Math.sin(v);
+
+  const rP = (p * cosV) / (1 + e * cosV);
+  const rQ = (p * sinV) / (1 + e * cosV);
+  const rW = 0;
+
+  const GravConstant = 6.6743 * Math.pow(10, -11);
+
+  const mu = planetM * GravConstant;
+
+  const vP = -Math.sqrt(mu / p) * sinV;
+  const vQ = Math.sqrt(mu / p) * (e + cosV);
+  const vW = 0;
+
+  //transform into IJK coords
+
+  const sinOmega = Math.sin(Omega);
+  const cosOmega = Math.cos(Omega);
+
+  const sinomega = Math.sin(omega);
+  const cosomega = Math.cos(omega);
+
+  const sinI = Math.sin(i);
+  const cosI = Math.cos(i);
+
+  const A = cosOmega * cosomega - sinOmega * sinomega * cosI;
+  const B = -cosOmega * sinomega - sinOmega * cosomega * cosI;
+  const C = sinOmega * sinI;
+
+  const D = sinOmega * cosomega + cosOmega * sinomega * cosI;
+  const E = -sinOmega * sinomega + cosOmega * cosomega * cosI;
+  const F = -cosOmega * sinI;
+
+  const G = sinomega * sinI;
+  const H = cosomega * sinI;
+  const I = cosI;
+
+  const rI = A * rP + B * rQ + C * rW;
+  const vI = A * vP + B * vQ + C * vW;
+
+  const rJ = D * rP + E * rQ + F * rW;
+  const vJ = D * vP + E * vQ + F * vW;
+
+  const rK = G * rP + H * rQ + I * rW;
+  const vK = G * vP + H * vQ + I * vW;
+
+  const r: number[] = [rI, rJ, rK];
+  const vel: number[] = [vI, vJ, vK];
+
+  return { r, vel };
+};
