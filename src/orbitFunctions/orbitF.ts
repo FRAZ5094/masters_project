@@ -1,10 +1,11 @@
 import { gravitationalA, solarRadiationA } from "./forces/forces";
+import { getOrbitPos, sunOrbitalElements } from "./kepler/kepler";
 import { isSatelliteInCylindricalUmbra } from "./shadowFunction/shadowFunction";
 
 export const orbitF = (
   pt: number[],
   massesData: number[],
-  isSat: boolean
+  t: number
 ): number[] => {
   let applyGravity = true;
   let applySRP = true;
@@ -14,16 +15,16 @@ export const orbitF = (
 
   //gravitational forces
   if (applyGravity) {
-    const nMasses = massesData.length / 7;
+    const nMasses = massesData.length / 4;
     for (let i = 0; i < nMasses; i++) {
-      const stride = i * 7;
+      const stride = i * 4;
 
       const ptOther = [
         massesData[stride + 0],
         massesData[stride + 1],
         massesData[stride + 2],
       ];
-      const mOther = massesData[stride + 6];
+      const mOther = massesData[stride + 3];
 
       const aGravity = gravitationalA(pt, ptOther, mOther);
 
@@ -32,14 +33,16 @@ export const orbitF = (
       a[2] += aGravity[2];
     }
   }
-  const sunPos = [147.13 * Math.pow(10, 9), 0, 0];
+
   const earthR = 6371 * 1000;
+
+  const sunPos = getOrbitPos(t, sunOrbitalElements);
 
   if (applyShadow) {
     applySRP = !isSatelliteInCylindricalUmbra(sunPos, [0, 0, 0], earthR, pt);
   }
 
-  if (applySRP && isSat) {
+  if (applySRP) {
     const dx = sunPos[0] - pt[0];
     const dy = sunPos[1] - pt[1];
     const dz = sunPos[2] - pt[2];

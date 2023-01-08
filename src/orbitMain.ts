@@ -20,7 +20,7 @@ let massesData: number[] | null;
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const dt: number = 30; //in seconds
+const dt: number = 60; //in seconds
 const simulationTime: number = oneYearInSeconds * 5;
 const saveInterval: number = 1000;
 const satelliteM: number = 1;
@@ -74,32 +74,6 @@ const updatePlanetPos = () => {
   sphere.position.set(satX, satY, satZ);
 
   scene.add(sphere);
-
-  for (let i = 0; i < nMasses; i++) {
-    const stride = nMasses * 7 * t + i * 7;
-
-    let x = massesData![stride + 0];
-    let y = massesData![stride + 1];
-    let z = massesData![stride + 2];
-
-    x *= distanceScale;
-    y *= distanceScale;
-    z *= distanceScale;
-
-    // if (i == trailsIndex) {
-    //   const sphere = new THREE.Mesh(
-    //     new THREE.SphereGeometry(0.001),
-    //     new THREE.MeshBasicMaterial({ color: 0xffffff })
-    //   );
-
-    //   sphere.position.set(x, y, z);
-
-    //   scene.add(sphere);
-    // }
-    // console.log({ x, y, z });
-
-    massObjects[i].mesh.position.set(x, y, z);
-  }
 };
 
 const timestepSliderElement = document.getElementById(
@@ -187,7 +161,6 @@ simulateButton.onclick = () => {
   satOrbitDataFields = orbitReturn.satOrbitDataFields;
   nDataFields = satOrbitDataFields.length;
   nTimestep = satOrbitData.length / nDataFields;
-  massesData = orbitReturn.massesData;
   timestepSliderElement.max = (satOrbitData.length / nDataFields).toString();
 
   console.log("sim finished");

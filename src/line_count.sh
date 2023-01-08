@@ -1,1 +1,1 @@
-cat *.ts functions/*/*.ts | wc -l
+cat *.ts orbitFunctiosn/*/*.ts softBodyFunctions/*/*.ts | wc -l

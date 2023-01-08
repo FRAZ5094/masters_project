@@ -3,12 +3,15 @@ import {
   orbitRK4,
   orbitSemiImplicitEuler,
 } from "./orbitFunctions/integrators";
+import {
+  getOrbitPos,
+  sunOrbitalElements,
+} from "./orbitFunctions/kepler/kepler";
 import { mass } from "./orbitMain";
 import { round } from "./softBodyFunctions/misc/misc";
 
 interface runOrbitSimReturn {
   satOrbitData: number[];
-  massesData: number[];
   satOrbitDataFields: string[];
 }
 
@@ -23,6 +26,9 @@ export const runOrbitSim = (
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
   const t0 = 0; //time at the start of the simulation
+
+  const sunPos = getOrbitPos(t0, sunOrbitalElements);
+
   const satOrbitData = [
     satP[0],
     satP[1],
@@ -31,29 +37,27 @@ export const runOrbitSim = (
     satV[1],
     satV[2],
     t0,
+    sunPos[0],
+    sunPos[1],
+    sunPos[2],
   ];
 
-  const satOrbitDataFields: string[] = ["x", "y", "z", "vx", "vy", "vz", "t"];
+  const satOrbitDataFields: string[] = [
+    "x",
+    "y",
+    "z",
+    "vx",
+    "vy",
+    "vz",
+    "t",
+    "sunPosX",
+    "sunPosY",
+    "sunPosZ",
+  ];
   const nFields = satOrbitDataFields.length;
 
   if (nFields != satOrbitData.length) {
     throw Error("satOrbitData names doesn't match saved data!");
-  }
-
-  const nSatDataPieces = satOrbitData.length; //find's number of pieces of data stored for the satellite
-
-  const massesData: number[] = [];
-
-  const nMasses = massObjects.length;
-
-  for (let i = 0; i < nMasses; i++) {
-    massesData.push(massObjects[i].x);
-    massesData.push(massObjects[i].y);
-    massesData.push(massObjects[i].z);
-    massesData.push(massObjects[i].vx);
-    massesData.push(massObjects[i].vy);
-    massesData.push(massObjects[i].vz);
-    massesData.push(massObjects[i].m);
   }
 
   let t = dt; //t starts at dt, and dt is added to t every step in the simulation, this is because dt varies
@@ -69,13 +73,19 @@ export const runOrbitSim = (
       console.log(round((t / simulationTime) * 100, 0) + "%");
     }
 
-    const massesDatat = massesData.slice(-(7 * nMasses));
+    const massesData: number[] = [];
 
-    // const ptSat = satOrbitData.slice(-nSatDataPieces, -(nSatDataPieces - 3));
-    // const vtSat = satOrbitData.slice(-(nSatDataPieces - 3));
+    const earthM = 5.972 * Math.pow(10, 24);
+    //earth
+    massesData.push(0);
+    massesData.push(0);
+    massesData.push(0);
+    massesData.push(earthM);
+
+    const sunPos = getOrbitPos(t, sunOrbitalElements);
 
     const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
-      integrator(ptSat, vtSat, massesDatat, dt, true);
+      integrator(ptSat, vtSat, massesData, t, dt);
 
     const prevSatOrbitDataLength = satOrbitData.length;
 
@@ -90,6 +100,10 @@ export const runOrbitSim = (
       satOrbitData.push(satNewVZ);
 
       satOrbitData.push(t);
+
+      satOrbitData.push(sunPos[0]);
+      satOrbitData.push(sunPos[1]);
+      satOrbitData.push(sunPos[2]);
 
       const newSatOrbitDataLength = satOrbitData.length;
 
@@ -106,44 +120,9 @@ export const runOrbitSim = (
     vtSat[1] = satNewVY;
     vtSat[2] = satNewVZ;
 
-    for (let i = 0; i < nMasses; i++) {
-      const stride = i * 7;
-
-      const pt = [
-        massesDatat[stride + 0],
-        massesDatat[stride + 1],
-        massesDatat[stride + 2],
-      ];
-      t;
-      const vt = [
-        massesDatat[stride + 3],
-        massesDatat[stride + 4],
-        massesDatat[stride + 5],
-      ];
-
-      const m = massesData[stride + 6];
-
-      let integrationReturn: number[];
-
-      if (i == 0) {
-        integrationReturn = pt.concat(vt);
-      } else {
-        integrationReturn = integrator(pt, vt, massesDatat, dt, false);
-      }
-
-      massesData.push(integrationReturn[0]);
-      massesData.push(integrationReturn[1]);
-      massesData.push(integrationReturn[2]);
-
-      massesData.push(integrationReturn[3]);
-      massesData.push(integrationReturn[4]);
-      massesData.push(integrationReturn[5]);
-
-      massesData.push(m);
-    }
     t += dt;
     iTimestep += 1;
   }
 
-  return { satOrbitData, massesData, satOrbitDataFields };
+  return { satOrbitData, satOrbitDataFields };
 };

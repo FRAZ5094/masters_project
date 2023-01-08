@@ -90,7 +90,7 @@ export const rvToKeplerOrbitalElements = (
 
 export interface keplerOrbitalElementsToRVReturn {
   r: number[];
-  vel: number[];
+  vel?: number[];
 }
 
 export const keplerOrbitalElementsToRV = (
@@ -100,7 +100,8 @@ export const keplerOrbitalElementsToRV = (
   Omega: number,
   omega: number,
   v: number,
-  planetM: number
+  planetM: number,
+  returnV: boolean
 ): keplerOrbitalElementsToRVReturn => {
   // Vallado p114
   const p = a * (1 - Math.pow(e, 2));
@@ -117,10 +118,6 @@ export const keplerOrbitalElementsToRV = (
   const GravConstant = 6.6743 * Math.pow(10, -11);
 
   const mu = planetM * GravConstant;
-
-  const vP = -Math.sqrt(mu / p) * sinV;
-  const vQ = Math.sqrt(mu / p) * (e + cosV);
-  const vW = 0;
 
   //transform into IJK coords
 
@@ -146,16 +143,76 @@ export const keplerOrbitalElementsToRV = (
   const I = cosI;
 
   const rI = A * rP + B * rQ + C * rW;
-  const vI = A * vP + B * vQ + C * vW;
-
   const rJ = D * rP + E * rQ + F * rW;
-  const vJ = D * vP + E * vQ + F * vW;
-
   const rK = G * rP + H * rQ + I * rW;
-  const vK = G * vP + H * vQ + I * vW;
 
   const r: number[] = [rI, rJ, rK];
-  const vel: number[] = [vI, vJ, vK];
 
-  return { r, vel };
+  if (returnV) {
+    const vP = -Math.sqrt(mu / p) * sinV;
+    const vQ = Math.sqrt(mu / p) * (e + cosV);
+    const vW = 0;
+
+    const vI = A * vP + B * vQ + C * vW;
+    const vJ = D * vP + E * vQ + F * vW;
+    const vK = G * vP + H * vQ + I * vW;
+
+    const vel: number[] = [vI, vJ, vK];
+    return { r, vel };
+  }
+
+  return { r };
+};
+
+export interface OrbitalElements {
+  a: number;
+  e: number;
+  i: number;
+  Omega: number;
+  omega: number;
+  T: number;
+  M_0: number;
+  planetM: number;
+}
+
+export const getOrbitPos = (
+  t: number,
+  orbitalElements: OrbitalElements
+): number[] => {
+  const M = orbitalElements.M_0 + ((2 * Math.PI) / orbitalElements.T) * t;
+
+  const e = orbitalElements.e;
+
+  const v =
+    M +
+    (2 * e - 0.25 * Math.pow(e, 3)) * Math.sin(M) +
+    1.25 * Math.pow(e, 2) * Math.sin(2 * M) +
+    (13 / 12) * Math.pow(e, 3) * Math.sin(3 * M);
+
+  const { r } = keplerOrbitalElementsToRV(
+    orbitalElements.a,
+    orbitalElements.e,
+    orbitalElements.i,
+    orbitalElements.Omega,
+    orbitalElements.omega,
+    v,
+    orbitalElements.planetM,
+    false
+  );
+
+  return r;
+};
+
+const deg2rad = Math.PI / 180;
+const earthM = 5.972 * Math.pow(10, 24);
+
+export const sunOrbitalElements: OrbitalElements = {
+  a: 149.598 * Math.pow(10, 9),
+  e: 0.0167,
+  i: 23.44 * deg2rad,
+  Omega: -11.26064 * deg2rad,
+  omega: 102.94719 * deg2rad,
+  T: 60 * 60 * 24 * 365,
+  M_0: 0,
+  planetM: earthM,
 };
