@@ -9,10 +9,21 @@ import {
 } from "./orbitFunctions/kepler/kepler";
 import { mass } from "./orbitMain";
 import { round } from "./softBodyFunctions/misc/misc";
+import { rk4 } from "./softBodySim";
 
 interface runOrbitSimReturn {
   satOrbitData: number[];
   satOrbitDataFields: string[];
+}
+
+export interface IntegratorFunction {
+  (
+    ptSat: number[],
+    vtSat: number[],
+    massesData: number[],
+    t: number,
+    dt: number
+  ): number[];
 }
 
 export const runOrbitSim = (
@@ -20,6 +31,7 @@ export const runOrbitSim = (
   satV: number[],
   simulationTime: number,
   dt: number,
+  integrator: IntegratorFunction,
   massObjects: mass[],
   saveInterval: number
 ): runOrbitSimReturn => {
@@ -63,7 +75,7 @@ export const runOrbitSim = (
   let t = dt; //t starts at dt, and dt is added to t every step in the simulation, this is because dt varies
   let iTimestep = 1;
 
-  const integrator = orbitRK4;
+  // const integrator = orbitRK4;
 
   const ptSat: number[] = [satP[0], satP[1], satP[2]];
   const vtSat: number[] = [satV[0], satV[1], satV[2]];

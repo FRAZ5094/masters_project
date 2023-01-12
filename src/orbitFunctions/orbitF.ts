@@ -8,8 +8,8 @@ export const orbitF = (
   t: number
 ): number[] => {
   let applyGravity = true;
-  let applySRP = true;
-  let applyShadow = true;
+  let applySRP = false;
+  let applyShadow = false;
 
   const a = [0, 0, 0];
 
@@ -53,7 +53,7 @@ export const orbitF = (
 
     const AM_ratio = 5;
 
-    const area = 1;
+    const area = 1; //m^2
     const mass = area / AM_ratio;
     const reflectivity = 0.993;
 

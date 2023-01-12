@@ -82,6 +82,28 @@ def calculateKeplerElements(x, y, z, vx, vy, vz):
     return [e, a, i, Omega, omega, trueAnomaly]
 
 
+def calculateEccentricityVector(x, y, z, vx, vy, vz):
+    G = 6.6743 * 10**-11
+
+    planetM = 5.972 * 10**24
+
+    mu = planetM * G
+
+    vMagSquared = abs(vx * vx + vy * vy + vz * vz)
+
+    rMag = np.sqrt(x * x + y * y + z * z)
+
+    rv = dot(x, y, z, vx, vy, vz)
+
+    rCoefficient = vMagSquared - mu / rMag
+
+    eVectorX = (1 / mu) * (rCoefficient * x - rv * vx)
+    eVectorY = (1 / mu) * (rCoefficient * y - rv * vy)
+    eVectorZ = (1 / mu) * (rCoefficient * z - rv * vz)
+
+    return [eVectorX, eVectorY, eVectorZ]
+
+
 if __name__ == '__main__':
 
     class TestStringMethods(unittest.TestCase):

@@ -18,6 +18,7 @@ import {
   handleVertexNormalArrows,
 } from "./softBodyFunctions/arrows/arrows";
 import { round } from "./softBodyFunctions/misc/misc";
+import { IndexToRowAndCol } from "./softBodyFunctions/IndexRowsCols/IndexRowsCols";
 
 console.log("ran main.ts");
 
@@ -39,7 +40,7 @@ const speedOptions = [1, 50, 100, 1000, 10000];
 const simulationParams: SimulationParams = {
   d: 1,
   AM_ratio: 1,
-  nWidthSegments: 20,
+  nWidthSegments: 19,
   k: 80,
   dampingRatio: 0,
   dt: 20,
@@ -71,6 +72,8 @@ const runSim = async () => {
   let pt = geometry.attributes.position.array as Float32Array;
   nVertices = pt.length / 3;
 
+  console.log("Number of vertices: ", nVertices);
+
   //vt will hold the velocities for the current time step
   let vt = new Float32Array(pt.length);
 
@@ -87,12 +90,34 @@ const runSim = async () => {
   const springArrays = getSpringIndicesArray(pt, nRows, nCols, xDepth, yDepth);
 
   let springCount = 0;
+  let verticalSpringCount = 0;
+  let horizontalSpringCount = 0;
+  let diagonalSpringCount = 0;
 
   for (let i = 0; i < springArrays.length; i++) {
-    springCount += springArrays[i].length;
+    const springArray = springArrays[i];
+    springCount += springArray.length;
+    const [rowForI, colForI] = IndexToRowAndCol(i, nRows, nCols);
+    for (let j = 0; j < springArray.length; j++) {
+      const [rowForJ, colForJ] = IndexToRowAndCol(
+        springArray[j][0],
+        nRows,
+        nCols
+      );
+      if (rowForI - rowForJ == 0) {
+        horizontalSpringCount += 1;
+      } else if (colForI - colForJ == 0) {
+        verticalSpringCount += 1;
+      } else {
+        diagonalSpringCount += 1;
+      }
+    }
   }
 
   console.log("Number of springs: " + springCount);
+  console.log("Number of vertical springs: " + verticalSpringCount);
+  console.log("Number of horizontal springs: " + horizontalSpringCount);
+  console.log("Number of diagonal springs: " + diagonalSpringCount);
 
   timestepSliderElement.max = (nTimestep - 1).toString();
 

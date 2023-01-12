@@ -5,6 +5,8 @@ import { runOrbitSim } from "./orbitSim";
 import earthTexturePath from "./assets/8k_earth_daymap.jpg";
 import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
 import { downloadFile } from "./orbitFunctions/misc/misc";
+import { orbitRK4 } from "./orbitFunctions/integrators";
+import { IntegratorFunction } from "./orbitSim";
 
 let t = 0;
 let playing = false;
@@ -20,9 +22,10 @@ let massesData: number[] | null;
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const dt: number = 60; //in seconds
-const simulationTime: number = oneYearInSeconds * 5;
-const saveInterval: number = 1000;
+const integrator: IntegratorFunction = orbitRK4;
+const dt: number = 5 * 60; //in seconds
+const simulationTime: number = oneYearInSeconds * 1;
+const saveInterval: number = 1;
 const satelliteM: number = 1;
 
 const estimatedNTimesteps = simulationTime / dt;
@@ -153,6 +156,7 @@ simulateButton.onclick = () => {
     satV,
     simulationTime,
     dt,
+    integrator,
     massObjects,
     saveInterval
   );
@@ -201,7 +205,7 @@ saveSimDataButton.onclick = () => {
 
   console.log("downloading data...");
 
-  const satFileName = "sat_" + baseFileName + "_" + Date.now() + ".txt";
+  const satFileName = "sat_" + baseFileName + ".txt";
 
   downloadFile(satFileName, satDataToSave);
 };

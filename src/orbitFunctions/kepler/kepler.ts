@@ -175,6 +175,11 @@ export interface OrbitalElements {
   planetM: number;
 }
 
+export interface orbitPosReturn {
+  r: number[];
+  v: number[];
+}
+
 export const getOrbitPos = (
   t: number,
   orbitalElements: OrbitalElements
@@ -215,4 +220,28 @@ export const sunOrbitalElements: OrbitalElements = {
   T: 60 * 60 * 24 * 365,
   M_0: 0,
   planetM: earthM,
+};
+
+export const calculateEccentricityVector = (
+  r: number[],
+  v: number[],
+  planetM: number
+): number[] => {
+  const G = 6.6743 * Math.pow(10, -11);
+
+  const mu = planetM * G;
+
+  const vMagSquared = Math.abs(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+  const rMag = Math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+
+  const rv = dot(r[0], r[1], r[2], v[0], v[1], v[2]);
+
+  const rCoefficient = vMagSquared - mu / rMag;
+
+  const eVectorX = (1 / mu) * (rCoefficient * r[0] - rv * v[0]);
+  const eVectorY = (1 / mu) * (rCoefficient * r[1] - rv * v[1]);
+  const eVectorZ = (1 / mu) * (rCoefficient * r[2] - rv * v[2]);
+
+  return [eVectorX, eVectorY, eVectorZ];
 };
