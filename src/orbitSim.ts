@@ -26,9 +26,6 @@ export const runOrbitSim = (
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
 
-  console.log(softBodyParams);
-  console.log(orbitParams);
-
   const t0 = 0; //time at the start of the simulation
 
   const sunPos = getOrbitPos(t0, sunOrbitalElements);
@@ -194,6 +191,9 @@ export const runOrbitSim = (
       ((performance.now() - simLoopStartTime) / 1000).toString() +
       " s"
   );
+
+  console.log("Params used:");
+  console.log({ softBodyParams, orbitParams });
 
   return { satOrbitData, satOrbitDataFields };
 };

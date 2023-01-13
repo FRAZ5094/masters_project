@@ -47,8 +47,8 @@ const orbitParams = {
   applySRP: true,
   applyShadow: true,
   useSoftBody: true,
-  simulationDays: 0,
-  simulationYears: 5,
+  simulationDays: 1,
+  simulationYears: 0,
 };
 
 export type OrbitParams = typeof orbitParams;
@@ -193,8 +193,8 @@ const simulateButton = document.getElementById(
 simulateButton.onclick = () => {
   console.log("sim started");
 
-  gui.domElement.style.opacity = "0.5";
-  gui.domElement.style.pointerEvents = "none";
+  // gui.domElement.style.opacity = "0.5";
+  // gui.domElement.style.pointerEvents = "none";
 
   const orbitReturn = runOrbitSim(
     satP,

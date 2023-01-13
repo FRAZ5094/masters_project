@@ -291,6 +291,7 @@ export const f = (
       aLightX = aVertMag * scale * lightDir[0];
       aLightY = aVertMag * scale * lightDir[1];
       aLightZ = aVertMag * scale * lightDir[2];
+
       fx += aLightX * mass;
       fy += aLightY * mass;
       fz += aLightZ * mass;
@@ -359,7 +360,7 @@ export const euler = (
   let y_new = y + vy_new * dt;
   let z_new = z + vz_new * dt;
 
-  //need to multiply the aLight by dt so that it is correct acceleration for the step size, based on how euler method handles this
+  //DONT MULTIPLY the light a here, because that will mean its multiplied twice when the orbit integration is done
 
   return [
     x_new,
@@ -368,9 +369,9 @@ export const euler = (
     vx_new,
     vy_new,
     vz_new,
-    aLightX * dt,
-    aLightY * dt,
-    aLightZ * dt,
+    aLightX,
+    aLightY,
+    aLightZ,
   ];
 };
 
@@ -509,12 +510,9 @@ export const rk4 = (
   vy += (dt * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)) / 6;
   vz += (dt * (k1vz + 2 * k2vz + 2 * k3vz + k4vz)) / 6;
 
-  const aLightX =
-    (dt * (k1ALightX + 2 * k2ALightX + 2 * k3ALightX + k4ALightX)) / 6;
-  const aLightY =
-    (dt * (k1ALightY + 2 * k2ALightY + 2 * k3ALightY + k4ALightY)) / 6;
-  const aLightZ =
-    (dt * (k1ALightZ + 2 * k2ALightZ + 2 * k3ALightZ + k4ALightZ)) / 6;
+  const aLightX = (k1ALightX + 2 * k2ALightX + 2 * k3ALightX + k4ALightX) / 6;
+  const aLightY = (k1ALightY + 2 * k2ALightY + 2 * k3ALightY + k4ALightY) / 6;
+  const aLightZ = (k1ALightZ + 2 * k2ALightZ + 2 * k3ALightZ + k4ALightZ) / 6;
 
   x += (dt * (k1x + 2 * k2x + 2 * k3x + k4x)) / 6;
   y += (dt * (k1y + 2 * k2y + 2 * k3y + k4y)) / 6;

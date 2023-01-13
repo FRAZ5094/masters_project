@@ -40,7 +40,7 @@ const simulationParams: SoftBodyParams = {
   k: 0,
   dampingRatio: 0,
   reflectivity: 0.993,
-  dt: 0.1,
+  dt: 0.3,
   d: 1,
   nCols: 20,
   integrator: "rk4",
@@ -180,12 +180,13 @@ const runSim = async () => {
     vt = simReturn.v_new;
 
     const returnA = simReturn.a;
-    console.log(returnA);
+    console.log("should be: " + aMag * simulationParams.dt);
     const aReturnMag = Math.sqrt(
       returnA[0] * returnA[0] +
         returnA[1] * returnA[1] +
         returnA[2] * returnA[2]
     );
+    console.log("actually is:" + aReturnMag);
 
     if (Number.isNaN(aReturnMag)) {
       console.log("UNSTABLE!");

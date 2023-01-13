@@ -47,7 +47,9 @@ export const orbitF = (
 
   const earthR = 6371 * 1000;
 
-  const sunPos = getOrbitPos(t, sunOrbitalElements);
+  // const sunPos = getOrbitPos(t, sunOrbitalElements);
+
+  const sunPos = [1 * Math.pow(10, 9), 0, 0];
 
   if (
     orbitParams.applySRP &&
@@ -68,6 +70,7 @@ export const orbitF = (
     let aSrp = [lightDir[0] * aMag, lightDir[1] * aMag, lightDir[2] * aMag];
 
     if (orbitParams.useSoftBody) {
+      //transform light dir from orbit reference frame to soft body reference frame
       const lightDirTransformed = [lightDir[1], lightDir[2], lightDir[0]];
       const simReturn = simulate(
         softBodyParams,
@@ -83,19 +86,16 @@ export const orbitF = (
       bodyPt = simReturn.p_new;
       bodyVt = simReturn.v_new;
 
-      // console.log(simReturn.a);
+      //transform the values back to the orbit reference frame
       aSrp = [simReturn.a[2], simReturn.a[0], simReturn.a[1]];
 
-      // const aSrpMag = Math.sqrt(
-      //   aSrp[0] * aSrp[0] + aSrp[1] * aSrp[1] + aSrp[2] * aSrp[2]
-      // );
-      // const srpNormalized = [
-      //   aSrp[0] / aSrpMag,
-      //   aSrp[1] / aSrpMag,
-      //   aSrp[2] / aSrpMag,
-      // ];
-
-      // console.log("SRP normalised: ", srpNormalized);
+      if (
+        Number.isNaN(aSrp[0]) ||
+        Number.isNaN(aSrp[1]) ||
+        Number.isNaN(aSrp[2])
+      ) {
+        console.log("UNSTABLE!");
+      }
     }
 
     a[0] += aSrp[0];
