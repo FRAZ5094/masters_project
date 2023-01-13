@@ -7,6 +7,9 @@ import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
 import { downloadFile } from "./orbitFunctions/misc/misc";
 import { orbitRK4 } from "./orbitFunctions/integrators";
 import { IntegratorFunction } from "./orbitFunctions/integrators";
+import { SoftBodyParams } from "./softBodySim";
+import { GUI } from "dat.gui";
+const gui = new GUI({ autoPlace: true, width: 300 });
 
 let t = 0;
 let playing = false;
@@ -22,9 +25,52 @@ const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
 const integrator: IntegratorFunction = orbitRK4;
-const dt: number = 5 * 60; //in seconds
-const simulationTime: number = oneYearInSeconds * 1;
+// const dt: number = 5 * 60; //in seconds
+// const simulationTime: number = oneYearInSeconds * 0.1;
 const saveInterval: number = 100;
+const softBodyParams: SoftBodyParams = {
+  AMR: 1,
+  k: 0,
+  dampingRatio: 0,
+  reflectivity: 0.993,
+  dt: 5 * 60,
+  d: 1,
+  nCols: 20,
+  integrator: "rk4",
+  lightForce: true,
+  selfShadowing: false,
+  selfCollision: false,
+};
+
+const orbitParams = {
+  applyGravity: true,
+  applySRP: true,
+  applyShadow: true,
+  useSoftBody: true,
+  simulationDays: 0,
+  simulationYears: 5,
+};
+
+export type OrbitParams = typeof orbitParams;
+
+gui.add(softBodyParams, "AMR", 1, 100).name("Area to mass ratio");
+gui.add(softBodyParams, "nCols", 1, 100).name("nCols");
+gui.add(softBodyParams, "dt").name("Time step size (s)");
+gui
+  .add(orbitParams, "simulationDays", 0, 365)
+  .step(1)
+  .name("Number of days in simulation");
+gui
+  .add(orbitParams, "simulationYears", 0, 100)
+  .step(1)
+  .name("Number of years in simulation");
+gui.add(softBodyParams, "lightForce").name("Apply light force?");
+gui.add(softBodyParams, "selfShadowing").name("Use self-shadowing?");
+
+gui.add(orbitParams, "applyGravity").name("Apply gravity?");
+gui.add(orbitParams, "applySRP").name("Apply solar radiation pressure?");
+gui.add(orbitParams, "applyShadow").name("Apply Earth shadow?");
+gui.add(orbitParams, "useSoftBody").name("Use soft body model?");
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
@@ -147,12 +193,15 @@ const simulateButton = document.getElementById(
 simulateButton.onclick = () => {
   console.log("sim started");
 
+  gui.domElement.style.opacity = "0.5";
+  gui.domElement.style.pointerEvents = "none";
+
   const orbitReturn = runOrbitSim(
     satP,
     satV,
-    simulationTime,
-    dt,
     integrator,
+    softBodyParams,
+    orbitParams,
     saveInterval
   );
 

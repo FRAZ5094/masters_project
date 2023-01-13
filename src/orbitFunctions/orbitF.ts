@@ -2,6 +2,7 @@ import { gravitationalA, solarRadiationAMag } from "./forces/forces";
 import { getOrbitPos, sunOrbitalElements } from "./kepler/kepler";
 import { isSatelliteInCylindricalUmbra } from "./shadowFunction/shadowFunction";
 import { SoftBodyParams, simulate } from "../softBodySim";
+import { OrbitParams } from "../orbitMain";
 
 export interface orbitFReturn {
   a: number[];
@@ -13,6 +14,7 @@ export const orbitF = (
   pt: number[],
   massesData: number[],
   softBodyParams: SoftBodyParams,
+  orbitParams: OrbitParams,
   bodyPt: Float32Array,
   bodyVt: Float32Array,
   springArrays: number[][][],
@@ -20,15 +22,10 @@ export const orbitF = (
   triangleIndicesArray: Uint16Array,
   t: number
 ): orbitFReturn => {
-  let applyGravity = true;
-  let applySRP = true;
-  let applyShadow = true;
-  let useSoftBody = false;
-
   const a = [0, 0, 0];
 
   //gravitational forces
-  if (applyGravity) {
+  if (orbitParams.applyGravity) {
     const nMasses = massesData.length / 4;
     for (let i = 0; i < nMasses; i++) {
       const stride = i * 4;
@@ -52,11 +49,10 @@ export const orbitF = (
 
   const sunPos = getOrbitPos(t, sunOrbitalElements);
 
-  if (applyShadow) {
-    applySRP = !isSatelliteInCylindricalUmbra(sunPos, [0, 0, 0], earthR, pt);
-  }
-
-  if (applySRP) {
+  if (
+    orbitParams.applySRP &&
+    !isSatelliteInCylindricalUmbra(sunPos, [0, 0, 0], earthR, pt)
+  ) {
     const dx = pt[0] - sunPos[0];
     const dy = pt[1] - sunPos[1];
     const dz = pt[2] - sunPos[2];
@@ -71,7 +67,7 @@ export const orbitF = (
 
     let aSrp = [lightDir[0] * aMag, lightDir[1] * aMag, lightDir[2] * aMag];
 
-    if (useSoftBody) {
+    if (orbitParams.useSoftBody) {
       const lightDirTransformed = [lightDir[1], lightDir[2], lightDir[0]];
       const simReturn = simulate(
         softBodyParams,

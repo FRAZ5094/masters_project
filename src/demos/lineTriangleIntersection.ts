@@ -9,7 +9,7 @@ const intersectedTriangles: THREE.Mesh[] = [];
 const p0 = new THREE.Vector3(0.25, 0.25, 1);
 const p1 = new THREE.Vector3(0.25, 0.25, 0);
 
-// const gui = new GUI();
+const gui = new GUI();
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 

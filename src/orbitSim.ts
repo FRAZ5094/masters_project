@@ -8,6 +8,7 @@ import { round } from "./softBodyFunctions/misc/misc";
 import { SoftBodyParams } from "./softBodySim";
 import { getTrianglesAttachedToVertexArray } from "./softBodyFunctions/vertexNormals/vertexNormals";
 import { IntegratorFunction } from "./orbitFunctions/integrators";
+import { OrbitParams } from "./orbitMain";
 
 interface runOrbitSimReturn {
   satOrbitData: number[];
@@ -17,27 +18,16 @@ interface runOrbitSimReturn {
 export const runOrbitSim = (
   satP: number[],
   satV: number[],
-  simulationTime: number,
-  dt: number,
   integrator: IntegratorFunction,
+  softBodyParams: SoftBodyParams,
+  orbitParams: OrbitParams,
   saveInterval: number
 ): runOrbitSimReturn => {
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
 
-  const softBodyParams: SoftBodyParams = {
-    AMR: 1,
-    k: 0,
-    dampingRatio: 0,
-    reflectivity: 0.993,
-    dt: dt,
-    d: 1,
-    nCols: 20,
-    integrator: "rk4",
-    lightForce: false,
-    selfShadowing: false,
-    selfCollision: false,
-  };
+  console.log(softBodyParams);
+  console.log(orbitParams);
 
   const t0 = 0; //time at the start of the simulation
 
@@ -74,6 +64,8 @@ export const runOrbitSim = (
     throw Error("satOrbitData names doesn't match saved data!");
   }
 
+  const dt = softBodyParams.dt;
+
   let t = dt; //t starts at dt, and dt is added to t every step in the simulation, this is because dt varies
   let iTimestep = 1;
 
@@ -109,6 +101,13 @@ export const runOrbitSim = (
 
   const simLoopStartTime = performance.now();
 
+  const oneDayInSeconds = 86400;
+  const oneYearInSeconds = oneDayInSeconds * 365;
+
+  const simulationTime =
+    orbitParams.simulationYears * oneYearInSeconds +
+    orbitParams.simulationDays * oneDayInSeconds;
+
   while (t < simulationTime) {
     if (t % (simulationTime / 100) == 0) {
       const fractionThroughSim = t / simulationTime;
@@ -120,16 +119,6 @@ export const runOrbitSim = (
       const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
 
       console.log("Estimated time remaining: " + estimatedRemainingTime + " s");
-
-      // const estimatedTotalSimTime: number =
-      //   ((performance.now() - simLoopStartTime) / t) * nTimestep;
-      // console.log(
-      //   "Simulation progress: " +
-      //     round((t / nTimestep) * 100, 0) +
-      //     "% " +
-      //     round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
-      //     " seconds left"
-      // );
     }
 
     const massesData: number[] = [];
@@ -149,6 +138,7 @@ export const runOrbitSim = (
       bodyPt,
       bodyVt,
       softBodyParams,
+      orbitParams,
       springArrays,
       trianglesAttachedToVertexArray,
       triangleIndicesArray,
@@ -198,6 +188,12 @@ export const runOrbitSim = (
     t += dt;
     iTimestep += 1;
   }
+
+  console.log(
+    "Simulation took " +
+      ((performance.now() - simLoopStartTime) / 1000).toString() +
+      " s"
+  );
 
   return { satOrbitData, satOrbitDataFields };
 };
