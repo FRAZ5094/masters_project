@@ -9,6 +9,7 @@ import { SoftBodyParams } from "./softBodySim";
 import { getTrianglesAttachedToVertexArray } from "./softBodyFunctions/vertexNormals/vertexNormals";
 import { IntegratorFunction } from "./orbitFunctions/integrators";
 import { OrbitParams } from "./orbitMain";
+import humaniseDuration from "humanize-duration";
 
 interface runOrbitSimReturn {
   satOrbitData: number[];
@@ -106,16 +107,32 @@ export const runOrbitSim = (
     orbitParams.simulationDays * oneDayInSeconds;
 
   while (t < simulationTime) {
-    if (t % (simulationTime / 100) == 0) {
+    if (iTimestep == 10) {
       const fractionThroughSim = t / simulationTime;
-      console.log(round(fractionThroughSim * 100, 0) + "%");
-      const timeElapsed = (performance.now() - simLoopStartTime) / 1000;
+      const timeElapsed = performance.now() - simLoopStartTime;
 
       const estimatedTotalSimTime = timeElapsed / fractionThroughSim;
 
       const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
 
-      console.log("Estimated time remaining: " + estimatedRemainingTime + " s");
+      console.log(
+        "Estimated time remaining after 100 time steps: " +
+          humaniseDuration(estimatedRemainingTime)
+      );
+    }
+
+    if (t % (simulationTime / 100) == 0) {
+      const fractionThroughSim = t / simulationTime;
+      console.log(round(fractionThroughSim * 100, 0) + "%");
+      const timeElapsed = performance.now() - simLoopStartTime;
+
+      const estimatedTotalSimTime = timeElapsed / fractionThroughSim;
+
+      const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
+
+      console.log(
+        "Estimated time remaining: " + humaniseDuration(estimatedRemainingTime)
+      );
     }
 
     const massesData: number[] = [];
