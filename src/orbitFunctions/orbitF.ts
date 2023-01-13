@@ -88,14 +88,6 @@ export const orbitF = (
 
       //transform the values back to the orbit reference frame
       aSrp = [simReturn.a[2], simReturn.a[0], simReturn.a[1]];
-
-      if (
-        Number.isNaN(aSrp[0]) ||
-        Number.isNaN(aSrp[1]) ||
-        Number.isNaN(aSrp[2])
-      ) {
-        console.log("UNSTABLE!");
-      }
     }
 
     a[0] += aSrp[0];

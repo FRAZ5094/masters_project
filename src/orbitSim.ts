@@ -161,6 +161,15 @@ export const runOrbitSim = (
       dt
     );
 
+    if (
+      Number.isNaN(integratorReturn.bodyPNew[0]) ||
+      Number.isNaN(integratorReturn.bodyPNew[1]) ||
+      Number.isNaN(integratorReturn.bodyPNew[2])
+    ) {
+      console.log("UNSTABLE!");
+      break;
+    }
+
     //update the state of the soft body
 
     bodyPt = integratorReturn.bodyPNew;
