@@ -97,6 +97,7 @@ export const runOrbitSim = (
     softBodyParams.nCols
   );
 
+  let lastTimePrint = performance.now();
   const simLoopStartTime = performance.now();
 
   const oneDayInSeconds = 86400;
@@ -107,21 +108,8 @@ export const runOrbitSim = (
     orbitParams.simulationDays * oneDayInSeconds;
 
   while (t < simulationTime) {
-    if (iTimestep == 100) {
-      const fractionThroughSim = t / simulationTime;
-      const timeElapsed = performance.now() - simLoopStartTime;
-
-      const estimatedTotalSimTime = timeElapsed / fractionThroughSim;
-
-      const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
-
-      console.log(
-        "Estimated time remaining after 100 time steps: " +
-          humaniseDuration(estimatedRemainingTime)
-      );
-    }
-
-    if (t % (simulationTime / 100) == 0) {
+    if (performance.now() - lastTimePrint >= 10 * 1000) {
+      lastTimePrint = performance.now();
       const fractionThroughSim = t / simulationTime;
       console.log(round(fractionThroughSim * 100, 0) + "%");
       const timeElapsed = performance.now() - simLoopStartTime;
