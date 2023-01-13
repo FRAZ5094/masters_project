@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && mv dist docs",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "jest --watch",
     "asbuild:debug": "asc assembly/index.ts --target debug",
