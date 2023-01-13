@@ -1,3 +1,5 @@
+import { SoftBodyParams } from "../../softBodySim";
+
 export const gravitationalA = (
   p: number[],
   pOther: number[],
@@ -26,12 +28,7 @@ export const gravitationalA = (
   return [ax, ay, az];
 };
 
-export const solarRadiationA = (
-  satToSunNormalized: number[],
-  areaExposedToSun: number,
-  mass: number,
-  reflectivity: number
-): number[] => {
+export const solarRadiationAMag = (softBodyParams: SoftBodyParams): number => {
   //formula from Vallado p581
 
   const SF = 1367; //W/m^2
@@ -40,12 +37,14 @@ export const solarRadiationA = (
 
   const p_srp = SF / c;
 
-  const ax =
-    -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[0];
-  const ay =
-    -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[1];
-  const az =
-    -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[2];
+  const aMag = p_srp * softBodyParams.reflectivity * softBodyParams.AMR;
 
-  return [ax, ay, az];
+  // const ax =
+  //   -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[0];
+  // const ay =
+  //   -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[1];
+  // const az =
+  //   -((p_srp * reflectivity * areaExposedToSun) / mass) * satToSunNormalized[2];
+
+  return aMag;
 };

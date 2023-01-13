@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getSpringIndicesArray } from "./softBodyFunctions/springArray/springArray";
-import { integrators, simulate, SimulationParams } from "./softBodySim";
+import { integrators, simulate, SoftBodyParams } from "./softBodySim";
 
 // @ts-ignore
 import vertexShader from "./shaders/vertex.glsl";
@@ -27,23 +27,22 @@ let speed = 1;
 let playing = false;
 
 const d = 1;
-const nTimestep: number = 1000;
+const nTimestep: number = 1;
 
 let p: Float32Array;
 let nVertices: number;
-let nRows: number;
-let nCols: number;
 let triangleIndicesArray: Uint16Array;
 let trianglesAttachedToVertexArray: number[][];
 const speedOptions = [1, 50, 100, 1000, 10000];
 
-const simulationParams: SimulationParams = {
-  d: 1,
-  AM_ratio: 1,
-  nWidthSegments: 19,
-  k: 80,
+const simulationParams: SoftBodyParams = {
+  AMR: 1,
+  k: 0,
   dampingRatio: 0,
-  dt: 20,
+  reflectivity: 0.993,
+  dt: 0.1,
+  d: 1,
+  nCols: 20,
   integrator: "rk4",
   lightForce: true,
   selfShadowing: false,
@@ -84,10 +83,13 @@ const runSim = async () => {
 
   geometry.setAttribute("uaMag", new THREE.BufferAttribute(uaMagArray, 1));
 
-  nCols = simulationParams.nWidthSegments + 1;
-  nRows = nCols;
-
-  const springArrays = getSpringIndicesArray(pt, nRows, nCols, xDepth, yDepth);
+  const springArrays = getSpringIndicesArray(
+    pt,
+    simulationParams.nCols,
+    simulationParams.nCols,
+    xDepth,
+    yDepth
+  );
 
   let springCount = 0;
   let verticalSpringCount = 0;
@@ -97,12 +99,16 @@ const runSim = async () => {
   for (let i = 0; i < springArrays.length; i++) {
     const springArray = springArrays[i];
     springCount += springArray.length;
-    const [rowForI, colForI] = IndexToRowAndCol(i, nRows, nCols);
+    const [rowForI, colForI] = IndexToRowAndCol(
+      i,
+      simulationParams.nCols,
+      simulationParams.nCols
+    );
     for (let j = 0; j < springArray.length; j++) {
       const [rowForJ, colForJ] = IndexToRowAndCol(
         springArray[j][0],
-        nRows,
-        nCols
+        simulationParams.nCols,
+        simulationParams.nCols
       );
       if (rowForI - rowForJ == 0) {
         horizontalSpringCount += 1;
@@ -125,8 +131,8 @@ const runSim = async () => {
 
   trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
     triangleIndicesArray,
-    nRows,
-    nCols
+    simulationParams.nCols,
+    simulationParams.nCols
   );
 
   const aMag = 4.57 * Math.pow(10, -6);
@@ -174,6 +180,7 @@ const runSim = async () => {
     vt = simReturn.v_new;
 
     const returnA = simReturn.a;
+    console.log(returnA);
     const aReturnMag = Math.sqrt(
       returnA[0] * returnA[0] +
         returnA[1] * returnA[1] +
@@ -212,7 +219,6 @@ const runSim = async () => {
   console.log({ timeStepPerSecond });
 
   console.log("sim done");
-  console.log(p);
 };
 
 const timestepSliderElement = document.getElementById(
@@ -383,8 +389,8 @@ controls.update();
 const geometry = new THREE.PlaneGeometry(
   d,
   d,
-  simulationParams.nWidthSegments,
-  simulationParams.nWidthSegments
+  simulationParams.nCols - 1,
+  simulationParams.nCols - 1
 );
 
 // console.log(`Set up and simulation took ${endTime - startTime} milliseconds`);

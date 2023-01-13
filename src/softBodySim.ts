@@ -17,10 +17,11 @@ import { round } from "./softBodyFunctions/misc/misc";
 
 export type integrators = "euler" | "rk4";
 
-export interface SimulationParams {
+export interface SoftBodyParams {
   d: number;
-  AM_ratio: number;
-  nWidthSegments: number;
+  AMR: number;
+  reflectivity: number;
+  nCols: number;
   k: number;
   integrator: integrators;
   dampingRatio: number;
@@ -42,7 +43,7 @@ let selfCollisionCheck: boolean;
 let lightForce: boolean;
 
 export const simulate = (
-  simulationParams: SimulationParams,
+  simulationParams: SoftBodyParams,
   p: Float32Array,
   v: Float32Array,
   aMag: number,
@@ -76,8 +77,7 @@ export const simulate = (
   const dampingRatio = simulationParams.dampingRatio;
 
   //this is the mass of a single particle
-  const mass =
-    (simulationParams.d * simulationParams.d) / simulationParams.AM_ratio;
+  const mass = (simulationParams.d * simulationParams.d) / simulationParams.AMR;
   const massP = mass / nVertices;
 
   const vertexNormals = calculateVertexNormals(

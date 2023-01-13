@@ -6,7 +6,7 @@ import earthTexturePath from "./assets/8k_earth_daymap.jpg";
 import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
 import { downloadFile } from "./orbitFunctions/misc/misc";
 import { orbitRK4 } from "./orbitFunctions/integrators";
-import { IntegratorFunction } from "./orbitSim";
+import { IntegratorFunction } from "./orbitFunctions/integrators";
 
 let t = 0;
 let playing = false;
@@ -17,7 +17,6 @@ let satOrbitData: number[] | null;
 let satOrbitDataFields: string[] | null;
 let nDataFields: number | null;
 let nTimestep: number | null;
-let massesData: number[] | null;
 
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
@@ -25,10 +24,7 @@ const oneYearInSeconds = oneDayInSeconds * 365;
 const integrator: IntegratorFunction = orbitRK4;
 const dt: number = 5 * 60; //in seconds
 const simulationTime: number = oneYearInSeconds * 1;
-const saveInterval: number = 1;
-const satelliteM: number = 1;
-
-const estimatedNTimesteps = simulationTime / dt;
+const saveInterval: number = 100;
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
@@ -157,7 +153,6 @@ simulateButton.onclick = () => {
     simulationTime,
     dt,
     integrator,
-    massObjects,
     saveInterval
   );
 
@@ -223,7 +218,6 @@ clearSimDataButton.onclick = () => {
     satOrbitData = null;
     nDataFields = null;
     nTimestep = null;
-    massesData = null;
   }
 };
 
@@ -362,8 +356,6 @@ massObjects.push({
   mesh: moon,
 });
 moon.position.z = moonOrbitR * distanceScale;
-
-const nMasses = massObjects.length;
 
 const animate = async () => {
   renderer.render(scene, camera);

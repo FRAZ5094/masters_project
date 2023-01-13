@@ -1,29 +1,17 @@
-import {
-  orbitExplicitEuler,
-  orbitRK4,
-  orbitSemiImplicitEuler,
-} from "./orbitFunctions/integrators";
+import * as THREE from "three";
+import { getSpringIndicesArray } from "./softBodyFunctions/springArray/springArray";
 import {
   getOrbitPos,
   sunOrbitalElements,
 } from "./orbitFunctions/kepler/kepler";
-import { mass } from "./orbitMain";
 import { round } from "./softBodyFunctions/misc/misc";
-import { rk4 } from "./softBodySim";
+import { SoftBodyParams } from "./softBodySim";
+import { getTrianglesAttachedToVertexArray } from "./softBodyFunctions/vertexNormals/vertexNormals";
+import { IntegratorFunction } from "./orbitFunctions/integrators";
 
 interface runOrbitSimReturn {
   satOrbitData: number[];
   satOrbitDataFields: string[];
-}
-
-export interface IntegratorFunction {
-  (
-    ptSat: number[],
-    vtSat: number[],
-    massesData: number[],
-    t: number,
-    dt: number
-  ): number[];
 }
 
 export const runOrbitSim = (
@@ -32,11 +20,25 @@ export const runOrbitSim = (
   simulationTime: number,
   dt: number,
   integrator: IntegratorFunction,
-  massObjects: mass[],
   saveInterval: number
 ): runOrbitSimReturn => {
   //contains the pos and velocity of the satellite and filled with the intial pos and velocity
   //note satellite mass is not stored, so it wont have a gravitational pull on other objects (reasonable assumption because the mass is very small)
+
+  const softBodyParams: SoftBodyParams = {
+    AMR: 1,
+    k: 0,
+    dampingRatio: 0,
+    reflectivity: 0.993,
+    dt: dt,
+    d: 1,
+    nCols: 20,
+    integrator: "rk4",
+    lightForce: false,
+    selfShadowing: false,
+    selfCollision: false,
+  };
+
   const t0 = 0; //time at the start of the simulation
 
   const sunPos = getOrbitPos(t0, sunOrbitalElements);
@@ -80,9 +82,54 @@ export const runOrbitSim = (
   const ptSat: number[] = [satP[0], satP[1], satP[2]];
   const vtSat: number[] = [satV[0], satV[1], satV[2]];
 
+  const geometry = new THREE.PlaneGeometry(
+    softBodyParams.d,
+    softBodyParams.d,
+    softBodyParams.nCols - 1,
+    softBodyParams.nCols - 1
+  );
+
+  let bodyPt = geometry.attributes.position.array as Float32Array;
+  let bodyVt = new Float32Array(bodyPt.length);
+
+  const springArrays = getSpringIndicesArray(
+    bodyPt,
+    softBodyParams.nCols,
+    softBodyParams.nCols,
+    1,
+    1
+  );
+  const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;
+
+  const trianglesAttachedToVertexArray = getTrianglesAttachedToVertexArray(
+    triangleIndicesArray,
+    softBodyParams.nCols,
+    softBodyParams.nCols
+  );
+
+  const simLoopStartTime = performance.now();
+
   while (t < simulationTime) {
     if (t % (simulationTime / 100) == 0) {
-      console.log(round((t / simulationTime) * 100, 0) + "%");
+      const fractionThroughSim = t / simulationTime;
+      console.log(round(fractionThroughSim * 100, 0) + "%");
+      const timeElapsed = (performance.now() - simLoopStartTime) / 1000;
+
+      const estimatedTotalSimTime = timeElapsed / fractionThroughSim;
+
+      const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
+
+      console.log("Estimated time remaining: " + estimatedRemainingTime + " s");
+
+      // const estimatedTotalSimTime: number =
+      //   ((performance.now() - simLoopStartTime) / t) * nTimestep;
+      // console.log(
+      //   "Simulation progress: " +
+      //     round((t / nTimestep) * 100, 0) +
+      //     "% " +
+      //     round((estimatedTotalSimTime - timeElapsed) / 1000, 1) +
+      //     " seconds left"
+      // );
     }
 
     const massesData: number[] = [];
@@ -96,20 +143,36 @@ export const runOrbitSim = (
 
     const sunPos = getOrbitPos(t, sunOrbitalElements);
 
-    const [satNewPtX, satNewPtY, satNewPtZ, satNewVX, satNewVY, satNewVZ] =
-      integrator(ptSat, vtSat, massesData, t, dt);
+    const integratorReturn = integrator(
+      ptSat,
+      vtSat,
+      bodyPt,
+      bodyVt,
+      softBodyParams,
+      springArrays,
+      trianglesAttachedToVertexArray,
+      triangleIndicesArray,
+      massesData,
+      t,
+      dt
+    );
+
+    //update the state of the soft body
+
+    bodyPt = integratorReturn.bodyPNew;
+    bodyVt = integratorReturn.bodyVNew;
 
     const prevSatOrbitDataLength = satOrbitData.length;
 
     //only save the values to the array every saveInterval number of time steps
     if (iTimestep % saveInterval == 0) {
-      satOrbitData.push(satNewPtX);
-      satOrbitData.push(satNewPtY);
-      satOrbitData.push(satNewPtZ);
+      satOrbitData.push(integratorReturn.pNew[0]);
+      satOrbitData.push(integratorReturn.pNew[1]);
+      satOrbitData.push(integratorReturn.pNew[2]);
 
-      satOrbitData.push(satNewVX);
-      satOrbitData.push(satNewVY);
-      satOrbitData.push(satNewVZ);
+      satOrbitData.push(integratorReturn.vNew[0]);
+      satOrbitData.push(integratorReturn.vNew[1]);
+      satOrbitData.push(integratorReturn.vNew[2]);
 
       satOrbitData.push(t);
 
@@ -124,13 +187,13 @@ export const runOrbitSim = (
       }
     }
 
-    ptSat[0] = satNewPtX;
-    ptSat[1] = satNewPtY;
-    ptSat[2] = satNewPtZ;
+    ptSat[0] = integratorReturn.pNew[0];
+    ptSat[1] = integratorReturn.pNew[1];
+    ptSat[2] = integratorReturn.pNew[2];
 
-    vtSat[0] = satNewVX;
-    vtSat[1] = satNewVY;
-    vtSat[2] = satNewVZ;
+    vtSat[0] = integratorReturn.vNew[0];
+    vtSat[1] = integratorReturn.vNew[1];
+    vtSat[2] = integratorReturn.vNew[2];
 
     t += dt;
     iTimestep += 1;

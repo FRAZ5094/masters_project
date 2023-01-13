@@ -1,15 +1,29 @@
-import { gravitationalA, solarRadiationA } from "./forces/forces";
+import { gravitationalA, solarRadiationAMag } from "./forces/forces";
 import { getOrbitPos, sunOrbitalElements } from "./kepler/kepler";
 import { isSatelliteInCylindricalUmbra } from "./shadowFunction/shadowFunction";
+import { SoftBodyParams, simulate } from "../softBodySim";
+
+export interface orbitFReturn {
+  a: number[];
+  bodyPt: Float32Array;
+  bodyVt: Float32Array;
+}
 
 export const orbitF = (
   pt: number[],
   massesData: number[],
+  softBodyParams: SoftBodyParams,
+  bodyPt: Float32Array,
+  bodyVt: Float32Array,
+  springArrays: number[][][],
+  trianglesAttachedToVertexArray: number[][],
+  triangleIndicesArray: Uint16Array,
   t: number
-): number[] => {
+): orbitFReturn => {
   let applyGravity = true;
-  let applySRP = false;
-  let applyShadow = false;
+  let applySRP = true;
+  let applyShadow = true;
+  let useSoftBody = false;
 
   const a = [0, 0, 0];
 
@@ -43,26 +57,55 @@ export const orbitF = (
   }
 
   if (applySRP) {
-    const dx = sunPos[0] - pt[0];
-    const dy = sunPos[1] - pt[1];
-    const dz = sunPos[2] - pt[2];
+    const dx = pt[0] - sunPos[0];
+    const dy = pt[1] - sunPos[1];
+    const dz = pt[2] - sunPos[2];
 
     const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-    const satToSunNormalized = [dx / mag, dy / mag, dz / mag];
+    const lightDir = [dx / mag, dy / mag, dz / mag];
 
-    const AM_ratio = 5;
+    // console.log("lightDir: ", lightDir);
 
-    const area = 1; //m^2
-    const mass = area / AM_ratio;
-    const reflectivity = 0.993;
+    const aMag = solarRadiationAMag(softBodyParams);
 
-    const aSrp = solarRadiationA(satToSunNormalized, area, mass, reflectivity);
+    let aSrp = [lightDir[0] * aMag, lightDir[1] * aMag, lightDir[2] * aMag];
+
+    if (useSoftBody) {
+      const lightDirTransformed = [lightDir[1], lightDir[2], lightDir[0]];
+      const simReturn = simulate(
+        softBodyParams,
+        bodyPt,
+        bodyVt,
+        aMag,
+        lightDirTransformed,
+        springArrays,
+        trianglesAttachedToVertexArray,
+        triangleIndicesArray
+      );
+
+      bodyPt = simReturn.p_new;
+      bodyVt = simReturn.v_new;
+
+      // console.log(simReturn.a);
+      aSrp = [simReturn.a[2], simReturn.a[0], simReturn.a[1]];
+
+      // const aSrpMag = Math.sqrt(
+      //   aSrp[0] * aSrp[0] + aSrp[1] * aSrp[1] + aSrp[2] * aSrp[2]
+      // );
+      // const srpNormalized = [
+      //   aSrp[0] / aSrpMag,
+      //   aSrp[1] / aSrpMag,
+      //   aSrp[2] / aSrpMag,
+      // ];
+
+      // console.log("SRP normalised: ", srpNormalized);
+    }
 
     a[0] += aSrp[0];
     a[1] += aSrp[1];
     a[2] += aSrp[2];
   }
 
-  return a;
+  return { a, bodyPt, bodyVt };
 };
