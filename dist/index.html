@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masters Project</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      /* #three_canvas {
+        /* border-style: solid;
+        border-radius: 1px;
+        border-color: blue; */
+      /* } */
+    </style>
+    <script>
+      javascript: (function () {
+        var script = document.createElement("script");
+        script.src =
+          "https://rawgit.com/paulirish/memory-stats.js/master/bookmarklet.js";
+        document.head.appendChild(script);
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index.34c39aa3.js"></script>
+  </head>
+  <body>
+    <canvas id="three_canvas"></canvas>
+    <button id="playButton">></button>
+    <select id="playbackSpeedDropdown"></select>
+    <input id="timestepSlider" type="range" />
+    <button id="simulateButton">Start simulation</button>
+    <button id="saveSimButton">Save simulation data</button>
+    <button id="clearSimDataButton">Clear simulation data</button>
+    <p id="timeStepDisplay">Time step index = 0</p>
+    <p id="timeDisplay">Time from start of sim (s) = 0</p>
+
+    <!-- <script
+      defer
+      type="module"
+      src="/src/demos/lineTriangleIntersection.ts"
+    ></script> -->
+    <!-- <script
+      defer
+      type="module"
+      src="/src/demos/particleTriangleCollisionResolution.ts"
+    ></script> -->
+    <!-- <script defer type="module" src="/src/softBodyMain.ts"></script> -->
+    
+    <!-- <script defer type="module" src="/src/saveToFileTest.ts"></script> -->
+
+    <!-- <script defer type="module" src="/src/benchmark.ts"></script> -->
+  </body>
+</html>
