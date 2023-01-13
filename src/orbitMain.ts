@@ -55,6 +55,8 @@ export type OrbitParams = typeof orbitParams;
 
 gui.add(softBodyParams, "AMR", 1, 100).name("Area to mass ratio");
 gui.add(softBodyParams, "nCols", 1, 100).name("nCols");
+gui.add(softBodyParams, "k").name("k");
+gui.add(softBodyParams, "dampingRatio").name("damping values");
 gui.add(softBodyParams, "dt").name("Time step size (s)");
 gui
   .add(orbitParams, "simulationDays", 0, 365)

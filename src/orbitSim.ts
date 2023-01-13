@@ -107,7 +107,7 @@ export const runOrbitSim = (
     orbitParams.simulationDays * oneDayInSeconds;
 
   while (t < simulationTime) {
-    if (iTimestep == 10) {
+    if (iTimestep == 100) {
       const fractionThroughSim = t / simulationTime;
       const timeElapsed = performance.now() - simLoopStartTime;
 
