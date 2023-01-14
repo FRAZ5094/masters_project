@@ -58,6 +58,8 @@ export const simulate = (
   else if (simulationParams.integrator == "rk4") integrator = rk4;
   else integrator = euler;
 
+  console.log("Integrator fucntion from soft body sim: " + integrator.name);
+
   const nVertices = p.length / 3;
 
   //split the accelerations evenly between all the vertices

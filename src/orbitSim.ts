@@ -7,7 +7,11 @@ import {
 import { round } from "./softBodyFunctions/misc/misc";
 import { SoftBodyParams } from "./softBodySim";
 import { getTrianglesAttachedToVertexArray } from "./softBodyFunctions/vertexNormals/vertexNormals";
-import { IntegratorFunction } from "./orbitFunctions/integrators";
+import {
+  IntegratorFunction,
+  orbitRK4,
+  orbitSemiImplicitEuler,
+} from "./orbitFunctions/integrators";
 import { OrbitParams } from "./orbitMain";
 import humaniseDuration from "humanize-duration";
 
@@ -19,7 +23,6 @@ interface runOrbitSimReturn {
 export const runOrbitSim = (
   satP: number[],
   satV: number[],
-  integrator: IntegratorFunction,
   softBodyParams: SoftBodyParams,
   orbitParams: OrbitParams,
   saveInterval: number
@@ -67,7 +70,24 @@ export const runOrbitSim = (
   let t = dt; //t starts at dt, and dt is added to t every step in the simulation, this is because dt varies
   let iTimestep = 1;
 
-  // const integrator = orbitRK4;
+  let orbitIntegrator: IntegratorFunction;
+
+  if (orbitParams.integrator == "euler") {
+    orbitIntegrator = orbitSemiImplicitEuler;
+  } else if (orbitParams.integrator == "rk4") {
+    orbitIntegrator = orbitRK4;
+  } else {
+    orbitIntegrator = orbitSemiImplicitEuler;
+  }
+
+  console.log("ORBIT PARAMETERS:");
+  console.log(JSON.stringify(orbitParams, null, 4));
+  console.log("SOFT BODY PARAMETERS:");
+  console.log(JSON.stringify(softBodyParams, null, 4));
+  console.log("ORBIT INTEGRATOR:");
+  console.log(orbitIntegrator.name);
+  console.log("SOFT BODY INTEGRATOR:");
+  console.log(softBodyParams.integrator);
 
   const ptSat: number[] = [satP[0], satP[1], satP[2]];
   const vtSat: number[] = [satV[0], satV[1], satV[2]];
@@ -118,6 +138,13 @@ export const runOrbitSim = (
 
       const estimatedRemainingTime = estimatedTotalSimTime - timeElapsed;
 
+      let date = new Date(Date.now());
+
+      console.log(
+        `Timestamp : ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+      );
+
+      console.log("Time elapsed: " + humaniseDuration(timeElapsed));
       console.log(
         "Estimated time remaining: " + humaniseDuration(estimatedRemainingTime)
       );
@@ -134,7 +161,7 @@ export const runOrbitSim = (
 
     const sunPos = getOrbitPos(t, sunOrbitalElements);
 
-    const integratorReturn = integrator(
+    const integratorReturn = orbitIntegrator(
       ptSat,
       vtSat,
       bodyPt,
@@ -208,6 +235,10 @@ export const runOrbitSim = (
 
   console.log("Params used:");
   console.log({ softBodyParams, orbitParams });
+  console.log("ORBIT INTEGRATOR:");
+  console.log(orbitIntegrator.name);
+  console.log("SOFT BODY INTEGRATOR:");
+  console.log(softBodyParams.integrator);
 
   return { satOrbitData, satOrbitDataFields };
 };

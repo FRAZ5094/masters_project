@@ -5,7 +5,11 @@ import { runOrbitSim } from "./orbitSim";
 import earthTexturePath from "./assets/8k_earth_daymap.jpg";
 import earthNormalMapPath from "./assets/8k_earth_normal_map.jpg";
 import { downloadFile } from "./orbitFunctions/misc/misc";
-import { orbitRK4 } from "./orbitFunctions/integrators";
+import {
+  orbitExplicitEuler,
+  orbitRK4,
+  orbitSemiImplicitEuler,
+} from "./orbitFunctions/integrators";
 import { IntegratorFunction } from "./orbitFunctions/integrators";
 import { SoftBodyParams } from "./softBodySim";
 import { GUI } from "dat.gui";
@@ -24,7 +28,6 @@ let nTimestep: number | null;
 const oneDayInSeconds = 86400;
 const oneYearInSeconds = oneDayInSeconds * 365;
 
-const integrator: IntegratorFunction = orbitRK4;
 // const dt: number = 5 * 60; //in seconds
 // const simulationTime: number = oneYearInSeconds * 0.1;
 const saveInterval: number = 100;
@@ -49,6 +52,7 @@ const orbitParams = {
   useSoftBody: true,
   simulationDays: 1,
   simulationYears: 0,
+  integrator: "euler",
 };
 
 export type OrbitParams = typeof orbitParams;
@@ -73,6 +77,10 @@ gui.add(orbitParams, "applyGravity").name("Apply gravity?");
 gui.add(orbitParams, "applySRP").name("Apply solar radiation pressure?");
 gui.add(orbitParams, "applyShadow").name("Apply Earth shadow?");
 gui.add(orbitParams, "useSoftBody").name("Use soft body model?");
+gui.add(orbitParams, "integrator", ["rk4", "euler"]).name("Orbit integrator");
+gui
+  .add(softBodyParams, "integrator", ["rk4", "euler"])
+  .name("Soft body integrator");
 
 const canvas = document.getElementById("three_canvas")! as HTMLCanvasElement;
 
@@ -201,7 +209,6 @@ simulateButton.onclick = () => {
   const orbitReturn = runOrbitSim(
     satP,
     satV,
-    integrator,
     softBodyParams,
     orbitParams,
     saveInterval
