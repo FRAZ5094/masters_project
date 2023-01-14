@@ -222,7 +222,7 @@ export const orbitRK4: IntegratorFunction = (
   const pNew = [px_new, py_new, pz_new];
   const vNew = [vx_new, vy_new, vz_new];
 
-  //assume that the new state is the one produced by the calculation of k4v
+  //assume that the new state is the one produced by the calculation of k1v
 
-  return { pNew, vNew, bodyPNew: fReturn4.bodyPt, bodyVNew: fReturn4.bodyVt };
+  return { pNew, vNew, bodyPNew: fReturn1.bodyPt, bodyVNew: fReturn1.bodyVt };
 };

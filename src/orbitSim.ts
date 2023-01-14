@@ -84,10 +84,6 @@ export const runOrbitSim = (
   console.log(JSON.stringify(orbitParams, null, 4));
   console.log("SOFT BODY PARAMETERS:");
   console.log(JSON.stringify(softBodyParams, null, 4));
-  console.log("ORBIT INTEGRATOR:");
-  console.log(orbitIntegrator.name);
-  console.log("SOFT BODY INTEGRATOR:");
-  console.log(softBodyParams.integrator);
 
   const ptSat: number[] = [satP[0], satP[1], satP[2]];
   const vtSat: number[] = [satV[0], satV[1], satV[2]];
@@ -233,12 +229,10 @@ export const runOrbitSim = (
       " s"
   );
 
-  console.log("Params used:");
-  console.log({ softBodyParams, orbitParams });
-  console.log("ORBIT INTEGRATOR:");
-  console.log(orbitIntegrator.name);
-  console.log("SOFT BODY INTEGRATOR:");
-  console.log(softBodyParams.integrator);
+  console.log("ORBIT PARAMETERS:");
+  console.log(JSON.stringify(orbitParams, null, 4));
+  console.log("SOFT BODY PARAMETERS:");
+  console.log(JSON.stringify(softBodyParams, null, 4));
 
   return { satOrbitData, satOrbitDataFields };
 };

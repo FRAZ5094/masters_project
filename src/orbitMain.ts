@@ -295,13 +295,14 @@ const normalScale = 20;
 
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(earthR * distanceScale),
-  new THREE.MeshPhongMaterial({
-    shininess: 50,
-    map: earthTexture,
-    normalMap: earthNormalMap,
-    normalScale: new THREE.Vector2(normalScale, normalScale),
-    side: THREE.DoubleSide,
-  })
+  // new THREE.MeshPhongMaterial({
+  //   shininess: 50,
+  //   map: earthTexture,
+  //   normalMap: earthNormalMap,
+  //   normalScale: new THREE.Vector2(normalScale, normalScale),
+  //   side: THREE.DoubleSide,
+  // }),
+  new THREE.MeshBasicMaterial({ map: earthTexture })
 );
 
 earth.rotateX(Math.PI / 2);

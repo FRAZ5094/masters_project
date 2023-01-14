@@ -398,7 +398,8 @@ const geometry = new THREE.PlaneGeometry(
 
 const plane = new THREE.Mesh(
   geometry,
-  new THREE.MeshNormalMaterial({ wireframe: true })
+  // new THREE.MeshNormalMaterial({ wireframe: true })
+  new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide })
 );
 
 // const plane = new THREE.Mesh(
