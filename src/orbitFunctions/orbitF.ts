@@ -47,9 +47,7 @@ export const orbitF = (
 
   const earthR = 6371 * 1000;
 
-  // const sunPos = getOrbitPos(t, sunOrbitalElements);
-
-  const sunPos = [1 * Math.pow(10, 9), 0, 0];
+  const sunPos = getOrbitPos(t, sunOrbitalElements);
 
   if (
     orbitParams.applySRP &&
