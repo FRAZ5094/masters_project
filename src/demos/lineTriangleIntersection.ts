@@ -62,6 +62,7 @@ scene.add(axesHelper);
 axesHelper.position.add(new THREE.Vector3(-1, -1, -1));
 
 camera.position.set(1.2, 0.9, 1);
+camera.position.setLength(2.5);
 controls.update();
 
 // const triangleIndicesArray = geometry.getIndex()!.array as Uint16Array;

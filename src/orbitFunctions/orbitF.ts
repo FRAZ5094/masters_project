@@ -1,6 +1,9 @@
 import { gravitationalA, solarRadiationAMag } from "./forces/forces";
 import { getOrbitPos, sunOrbitalElements } from "./kepler/kepler";
-import { isSatelliteInCylindricalUmbra } from "./shadowFunction/shadowFunction";
+import {
+  isSatelliteInCylindricalUmbra,
+  shadowFunction,
+} from "./shadowFunction/shadowFunction";
 import { SoftBodyParams, simulate } from "../softBodySim";
 import { OrbitParams } from "../orbitMain";
 
@@ -46,13 +49,11 @@ export const orbitF = (
   }
 
   const earthR = 6371 * 1000;
+  const sunR = 696340 * 1000;
 
   const sunPos = getOrbitPos(t, sunOrbitalElements);
 
-  if (
-    orbitParams.applySRP &&
-    !isSatelliteInCylindricalUmbra(sunPos, [0, 0, 0], earthR, pt)
-  ) {
+  if (orbitParams.applySRP) {
     const dx = pt[0] - sunPos[0];
     const dy = pt[1] - sunPos[1];
     const dz = pt[2] - sunPos[2];
@@ -61,9 +62,9 @@ export const orbitF = (
 
     const lightDir = [dx / mag, dy / mag, dz / mag];
 
-    // console.log("lightDir: ", lightDir);
-
-    const aMag = solarRadiationAMag(softBodyParams);
+    //apply shadow function here
+    const v = shadowFunction(pt, sunPos, sunR, earthR);
+    const aMag = v * solarRadiationAMag(softBodyParams);
 
     let aSrp = [lightDir[0] * aMag, lightDir[1] * aMag, lightDir[2] * aMag];
 
